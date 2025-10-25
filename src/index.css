@@ -1,0 +1,297 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --pizza-red: #E31E24;
+    --pizza-yellow: #FDB913;
+    --pizza-orange: #FF6B35;
+    --pizza-dark-red: #B71C1C;
+    --pizza-gold: #FFD700;
+    --pizza-light-red: #FFE5E6;
+    --pizza-light-yellow: #FFF8E1;
+    --pizza-light-orange: #FFE8DC;
+    --pizza-super-light-red: #FFF5F5;
+    
+    --bg-light: #FFFFFF;
+    --bg-card: #FAFAFA;
+    --bg-sidebar: #FFFFFF;
+    --bg-hover: #FFF5F5;
+    --text-primary: #1a1a1a;
+    --text-secondary: #666666;
+    --border-color: #E5E5E5;
+    
+    --shadow-sm: 0 4px 20px rgba(227, 30, 36, 0.1);
+    --shadow-md: 0 8px 40px rgba(227, 30, 36, 0.15);
+    --shadow-lg: 0 15px 60px rgba(227, 30, 36, 0.2);
+    --shadow-glow: 0 0 50px rgba(253, 185, 19, 0.3);
+    
+    --transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --transition-bounce: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    background: #FFFFFF;
+    background-image: 
+        radial-gradient(circle at 10% 20%, rgba(227, 30, 36, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 90% 80%, rgba(253, 185, 19, 0.04) 0%, transparent 50%),
+        radial-gradient(circle at 30% 40%, rgba(255, 107, 53, 0.03) 0%, transparent 40%);
+    background-attachment: fixed;
+    color: var(--text-primary);
+    line-height: 1.7;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        linear-gradient(45deg, transparent 49%, rgba(227, 30, 36, 0.015) 50%, transparent 51%),
+        linear-gradient(-45deg, transparent 49%, rgba(253, 185, 19, 0.015) 50%, transparent 51%);
+    background-size: 100px 100px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Scrollbar Personalizado */
+::-webkit-scrollbar {
+    width: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(227, 30, 36, 0.05);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--pizza-red), var(--pizza-orange));
+    border-radius: 10px;
+    border: 2px solid white;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, var(--pizza-orange), var(--pizza-yellow));
+    box-shadow: 0 0 10px rgba(253, 185, 19, 0.5);
+}
+
+/* Selection */
+::selection {
+    background: var(--pizza-red);
+    color: white;
+}
+
+/* Animaciones Globales */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Clases Utilitarias */
+.card {
+    background: var(--bg-light);
+    border: 2px solid var(--border-color);
+    border-radius: 24px;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-bounce);
+    overflow: hidden;
+    position: relative;
+    backdrop-filter: blur(10px);
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background: linear-gradient(90deg, 
+        var(--pizza-red) 0%, 
+        var(--pizza-orange) 50%, 
+        var(--pizza-yellow) 100%);
+    box-shadow: 0 2px 15px rgba(227, 30, 36, 0.3);
+    transition: var(--transition);
+}
+
+.card:hover {
+    transform: translateY(-12px) scale(1.02);
+    box-shadow: 
+        var(--shadow-lg),
+        var(--shadow-glow);
+    border-color: var(--pizza-orange);
+}
+
+.btn {
+    padding: 1rem 2.25rem;
+    border-radius: 16px;
+    font-weight: 800;
+    transition: var(--transition-bounce);
+    border: 2px solid transparent;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.95rem;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+}
+
+.btn:hover::before {
+    transform: translateX(100%);
+}
+
+.btn:hover {
+    transform: translateY(-6px) scale(1.05);
+    box-shadow: 
+        var(--shadow-lg),
+        0 12px 30px rgba(227, 30, 36, 0.25);
+}
+
+.btn:active {
+    transform: translateY(-2px) scale(1.02);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, 
+        var(--pizza-red) 0%, 
+        var(--pizza-orange) 100%);
+    color: white;
+    border-color: var(--pizza-yellow);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, 
+        var(--pizza-dark-red) 0%, 
+        var(--pizza-red) 100%);
+    box-shadow: 
+        0 12px 35px rgba(227, 30, 36, 0.4),
+        0 0 0 3px rgba(253, 185, 19, 0.3);
+    border-color: var(--pizza-gold);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, 
+        var(--pizza-yellow) 0%, 
+        var(--pizza-gold) 100%);
+    color: var(--text-primary);
+    border-color: var(--pizza-orange);
+    font-weight: 800;
+}
+
+.btn-warning:hover {
+    background: linear-gradient(135deg, 
+        var(--pizza-gold) 0%, 
+        var(--pizza-yellow) 100%);
+    box-shadow: 0 12px 35px rgba(253, 185, 19, 0.4);
+}
+
+/* Badge */
+.badge {
+    padding: 0.6rem 1.2rem;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 2px solid transparent;
+    box-shadow: var(--shadow-sm);
+}
+
+.badge-primary {
+    background: linear-gradient(135deg, var(--pizza-red), var(--pizza-orange));
+    border-color: var(--pizza-yellow);
+    color: white;
+}
+
+.badge-warning {
+    background: linear-gradient(135deg, var(--pizza-yellow), var(--pizza-gold));
+    color: var(--text-primary);
+    border-color: var(--pizza-orange);
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    width: 70px;
+    height: 70px;
+    border: 5px solid var(--pizza-light-red);
+    border-top: 5px solid var(--pizza-red);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(227, 30, 36, 0.2);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .card {
+        border-radius: 20px;
+    }
+    
+    .btn {
+        padding: 0.875rem 1.75rem;
+        font-size: 0.9rem;
+    }
+}
