@@ -43,6 +43,30 @@ const Home = () => {
     { number: "50+", label: "Tipos de Pizza" }
   ];
 
+  // Función para manejar el clic en "Agregar"
+  const handleAddToCart = (product) => {
+    // Aquí puedes agregar lógica para añadir el producto al carrito
+    console.log('Producto agregado:', product);
+    
+    // Redirigir al carrito
+    window.location.href = '/carrito';
+  };
+
+  // Función para manejar el clic en "Ordenar Ahora"
+  const handleOrderNow = () => {
+    window.location.href = '/menu';
+  };
+
+  // Función para manejar el clic en "Ver Menú Completo"
+  const handleViewMenu = () => {
+    window.location.href = '/menu';
+  };
+
+  // Función para manejar el clic en la oferta especial
+  const handleSpecialOffer = () => {
+    window.location.href = '/menu';
+  };
+
   return (
     <div className="home-page">
       {/* Hero Section */}
@@ -59,10 +83,10 @@ const Home = () => {
                 Ingredientes frescos, masa casera y mucho amor en cada preparación.
               </p>
               <div className="hero-actions">
-                <button className="btn btn-primary">
+                <button className="btn btn-primary" onClick={handleOrderNow}>
                   🚀 Ordenar Ahora
                 </button>
-                <button className="btn btn-secondary">
+                <button className="btn btn-secondary" onClick={handleViewMenu}>
                   📱 Ver Menú Completo
                 </button>
               </div>
@@ -101,7 +125,12 @@ const Home = () => {
                   <p className="product-description">{product.description}</p>
                   <div className="product-footer">
                     <span className="product-price">S/. {product.price}</span>
-                    <button className="btn-add-cart">🛒 Agregar</button>
+                    <button 
+                      className="btn-add-cart"
+                      onClick={() => handleAddToCart(product)}
+                    >
+                      🛒 Agregar
+                    </button>
                   </div>
                 </div>
               </div>
@@ -125,7 +154,9 @@ const Home = () => {
                 Perfecto para compartir en familia o con amigos. 
                 ¡No dejes pasar esta oportunidad!
               </p>
-              <button className="btn btn-warning">¡Quiero esta Oferta!</button>
+              <button className="btn btn-warning" onClick={handleSpecialOffer}>
+                ¡Quiero esta Oferta!
+              </button>
             </div>
             <div className="promo-image">
               <div className="pizza-combo">🍕🍕🥤🥤</div>

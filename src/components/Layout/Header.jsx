@@ -1,52 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  // Efecto para detectar scroll
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.pageYOffset;
-      setIsScrolled(scrollTop > 50);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const handleOrderClick = () => {
     window.location.href = '/menu';
   };
 
-  // Función para redirigir al carrito
   const handleCartClick = () => {
     window.location.href = '/carrito';
   };
 
-  // Nueva función para redirigir al perfil
   const handleProfileClick = () => {
     window.location.href = '/perfil';
   };
 
-  // Función para navegación general
   const handleNavigation = (path) => {
     window.location.href = path;
     setIsMenuOpen(false);
   };
 
   return (
-    <header className={`header ${isScrolled ? 'scrolled' : ''}`}>
-      {/* Navegación Principal */}
+    <header className="header">
       <nav className="main-nav">
         <div className="container">
           <div className="nav-content">
-            {/* Logo */}
+            {/* Logo compacto */}
             <div className="logo">
               <div className="logo-icon">🍕</div>
               <div className="logo-text">
                 <h1>Happy Pizza</h1>
-                <p>¡La felicidad en cada bocado!</p>
               </div>
             </div>
 

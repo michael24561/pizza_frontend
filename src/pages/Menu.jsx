@@ -205,6 +205,11 @@ const Menu = () => {
     return cart.reduce((total, item) => total + (item.quantity || 1), 0);
   };
 
+  // Función para redirigir al carrito
+  const handleViewCart = () => {
+    window.location.href = '/carrito';
+  };
+
   return (
     <div className="menu-page">
       {/* Header del Menú */}
@@ -310,7 +315,12 @@ const Menu = () => {
         <div className="floating-cart">
           <div className="cart-summary">
             <span>{getCartCount()} items en el carrito</span>
-            <button className="btn-view-cart">Ver Carrito</button>
+            <button 
+              className="btn-view-cart"
+              onClick={handleViewCart}
+            >
+              Ver Carrito
+            </button>
           </div>
         </div>
       )}
