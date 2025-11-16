@@ -1,60 +1,47 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { authService } from '../api/authService';
+// src/contexts/AuthContext.jsx
+import React, { createContext, useState, useEffect } from "react";
+import api from "../api";
 
-const AuthContext = createContext();
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth debe ser usado dentro de un AuthProvider');
-  }
-  return context;
-};
+export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null); // puedes guardar {usuario, correo, ...}
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    // Al cargar la app, intentar recuperar usuario si hay token
+    const token = localStorage.getItem("token");
     if (token) {
-      // Verificar si el token es válido
-      const userData = authService.getCurrentUser();
-      if (userData) {
-        setUser(userData);
-      }
+      // Intento: pedir /status/ o /clientes/actual para confirmar token.
+      api.get("/status/")
+        .then(res => {
+          // backend devolvió éxito -> marcar usuario como logueado (no incluye datos de usuario en este endpoint)
+          setUser({ logged: true });
+        })
+        .catch(()=> {
+          localStorage.removeItem("token");
+          localStorage.removeItem("auth_scheme");
+          setUser(null);
+        });
     }
-    setLoading(false);
   }, []);
 
-  const login = async (credentials) => {
-    try {
-      const data = await authService.login(credentials);
-      setUser(data.user || { username: credentials.username });
-      return { success: true, data };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.message || 'Error en el login' 
-      };
-    }
+  const loginWithToken = (token, scheme = "Token", userData = null) => {
+    localStorage.setItem("token", token);
+    localStorage.setItem("auth_scheme", scheme);
+    if (userData) setUser(userData);
+    else setUser({ logged: true });
   };
 
-  const logout = () => {
-    authService.logout();
+  const logout = async () => {
+    // opcional: llamar /logout/ si tu backend lo soporta
+    try { await api.get("/logout/"); } catch(e){ /*ignore*/ }
+    localStorage.removeItem("token");
+    localStorage.removeItem("auth_scheme");
     setUser(null);
   };
 
-  const value = {
-    user,
-    login,
-    logout,
-    isAuthenticated: !!user,
-    loading
-  };
-
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ user, setUser, loginWithToken, logout }}>
       {children}
     </AuthContext.Provider>
   );

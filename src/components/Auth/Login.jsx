@@ -1,179 +1,64 @@
-import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useState } from "react";
+import axios from "axios";
 
-const Login = ({ onClose, onSuccess }) => {
-  const [credentials, setCredentials] = useState({
-    username: '',
-    password: ''
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const { login } = useAuth();
+export default function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    setError("");
 
-    const result = await login(credentials);
-    
-    if (result.success) {
-      onSuccess?.();
-      onClose?.();
-    } else {
-      setError(result.error);
+    try {
+      // Aquí cambia la URL a la de tu backend real (por ejemplo http://127.0.0.1:8000/api/token/)
+      const response = await axios.post("http://127.0.0.1:8000/api/token/", {
+        email,
+        password,
+      });
+
+      // Si tu backend devuelve access y refresh tokens
+      localStorage.setItem("access", response.data.access);
+      localStorage.setItem("refresh", response.data.refresh);
+
+      alert("✅ Inicio de sesión exitoso!");
+      window.location.href = "/home"; // redirige a tu página principal
+    } catch (err) {
+      console.error(err);
+      setError("❌ Usuario o contraseña incorrectos");
     }
-    
-    setLoading(false);
-  };
-
-  const handleChange = (e) => {
-    setCredentials({
-      ...credentials,
-      [e.target.name]: e.target.value
-    });
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100%',
-      height: '100%',
-      background: 'rgba(0, 0, 0, 0.8)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 10000,
-      backdropFilter: 'blur(10px)'
-    }}>
-      <div style={{
-        background: 'linear-gradient(135deg, #FFFFFF 0%, #FAFAFA 100%)',
-        padding: '3rem',
-        borderRadius: '24px',
-        border: '3px solid transparent',
-        backgroundClip: 'padding-box',
-        position: 'relative',
-        boxShadow: 'var(--shadow-lg)',
-        width: '90%',
-        maxWidth: '400px'
-      }}>
-        <button 
-          onClick={onClose}
-          style={{
-            position: 'absolute',
-            top: '1rem',
-            right: '1rem',
-            background: 'none',
-            border: 'none',
-            fontSize: '1.5rem',
-            cursor: 'pointer',
-            color: 'var(--pizza-red)'
-          }}
+    <div className="flex justify-center items-center h-screen bg-gray-100">
+      <form onSubmit={handleLogin} className="bg-white p-8 rounded-2xl shadow-md w-80">
+        <h2 className="text-2xl font-bold text-center mb-4">Iniciar sesión</h2>
+
+        {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
+
+        <input
+          type="email"
+          placeholder="Correo"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="border rounded-lg p-2 w-full mb-3"
+          required
+        />
+        <input
+          type="password"
+          placeholder="Contraseña"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="border rounded-lg p-2 w-full mb-4"
+          required
+        />
+        <button
+          type="submit"
+          className="bg-blue-600 text-white p-2 rounded-lg w-full hover:bg-blue-700"
         >
-          ✕
+          Entrar
         </button>
-
-        <h2 style={{
-          textAlign: 'center',
-          marginBottom: '2rem',
-          color: 'var(--pizza-red)',
-          fontSize: '2rem',
-          fontWeight: '900'
-        }}>
-          🍕 Iniciar Sesión
-        </h2>
-
-        {error && (
-          <div style={{
-            background: 'var(--pizza-light-red)',
-            color: 'var(--pizza-red)',
-            padding: '1rem',
-            borderRadius: '12px',
-            marginBottom: '1.5rem',
-            border: '2px solid var(--pizza-red)',
-            fontWeight: '600'
-          }}>
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '0.5rem',
-              fontWeight: '600',
-              color: 'var(--text-primary)'
-            }}>
-              Usuario
-            </label>
-            <input
-              type="text"
-              name="username"
-              value={credentials.username}
-              onChange={handleChange}
-              required
-              style={{
-                width: '100%',
-                padding: '1rem',
-                border: '2px solid var(--border-color)',
-                borderRadius: '12px',
-                fontSize: '1rem',
-                transition: 'var(--transition)'
-              }}
-              placeholder="Ingresa tu usuario"
-            />
-          </div>
-
-          <div style={{ marginBottom: '2rem' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '0.5rem',
-              fontWeight: '600',
-              color: 'var(--text-primary)'
-            }}>
-              Contraseña
-            </label>
-            <input
-              type="password"
-              name="password"
-              value={credentials.password}
-              onChange={handleChange}
-              required
-              style={{
-                width: '100%',
-                padding: '1rem',
-                border: '2px solid var(--border-color)',
-                borderRadius: '12px',
-                fontSize: '1rem',
-                transition: 'var(--transition)'
-              }}
-              placeholder="Ingresa tu contraseña"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn btn-primary"
-            style={{ width: '100%', justifyContent: 'center' }}
-          >
-            {loading ? '⏳ Iniciando...' : '🚀 Iniciar Sesión'}
-          </button>
-        </form>
-
-        <div style={{
-          textAlign: 'center',
-          marginTop: '1.5rem',
-          color: 'var(--text-secondary)'
-        }}>
-          ¿No tienes cuenta? <a href="#" style={{ color: 'var(--pizza-red)', fontWeight: '600' }}>Regístrate</a>
-        </div>
-      </div>
+      </form>
     </div>
   );
-};
-
-export default Login;
+}
