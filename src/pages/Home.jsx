@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
+import { repertorioService } from "../api/repertorioService";
+import { categoriaService } from "../api/categoriaService";
 
 export default function Home() {
-  const [pizzas, setPizzas] = useState([
-    { id: 1, titulo: "Margherita", imagen: "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400&h=400&fit=crop", precio: 25 },
-    { id: 2, titulo: "Pepperoni", imagen: "https://images.unsplash.com/photo-1628840042765-356cda07504e?w=400&h=400&fit=crop", precio: 30 },
-    { id: 3, titulo: "Hawaiana", imagen: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=400&fit=crop", precio: 28 },
-    { id: 4, titulo: "Suprema", imagen: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=400&fit=crop", precio: 35 }
-  ]);
+  const [pizzas, setPizzas] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  // Default hardcoded offers (as requested to keep these static)
   const [ofertas, setOfertas] = useState([
     { id: 1, titulo: "2x1 en Pizzas Medianas", imagen: "https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=400&h=300&fit=crop", descuento: "50%" },
     { id: 2, titulo: "Combo Familiar", imagen: "https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?w=400&h=300&fit=crop", descuento: "30%" },
@@ -17,10 +17,41 @@ export default function Home() {
   const [locate, setLocate] = useState("");
   const [inputValue, setInputValue] = useState("");
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [repertoriosRes, categoriasRes] = await Promise.all([
+          repertorioService.getAll(),
+          categoriaService.getAll()
+        ]);
+
+        setPizzas(repertoriosRes.data);
+        setCategorias(categoriasRes.data);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   const handleSetLocation = () => {
     if (inputValue.trim()) {
       setLocate(inputValue);
     }
+  };
+
+  // Helper function to map category names to emojis/colors if desired, or just use defaults
+  const getCategoryStyle = (index) => {
+    const styles = [
+      { gradient: "from-yellow-400 to-orange-400", icon: "💰", textColor: "text-gray-900" },
+      { gradient: "from-red-500 to-red-600", icon: "🍕", textColor: "text-white" },
+      { gradient: "from-blue-400 to-blue-500", icon: "🥤", textColor: "text-white" },
+      { gradient: "from-orange-500 to-red-500", icon: "🔥", textColor: "text-white" }
+    ];
+    return styles[index % styles.length];
   };
 
   return (
@@ -29,9 +60,9 @@ export default function Home() {
       <header className="relative w-full h-[500px] overflow-hidden">
         {/* Banner Image with overlay */}
         <div className="absolute inset-0">
-          <img 
-            src="https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1200&h=500&fit=crop" 
-            alt="banner" 
+          <img
+            src="https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1200&h=500&fit=crop"
+            alt="banner"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent"></div>
@@ -56,15 +87,15 @@ export default function Home() {
             </h1>
 
             {locate ? (
-              <a 
-                href="/oferts" 
+              <a
+                href="/oferts"
                 className="inline-block bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 font-bold px-8 py-4 rounded-full hover:from-yellow-500 hover:to-orange-500 transform hover:scale-105 transition-all duration-200 shadow-xl"
               >
                 🎉 Ver Ofertas Especiales
               </a>
             ) : (
-              <a 
-                href="#ubicacion" 
+              <a
+                href="#ubicacion"
                 className="inline-block bg-gradient-to-r from-red-600 to-red-500 text-white font-bold px-8 py-4 rounded-full hover:from-red-700 hover:to-red-600 transform hover:scale-105 transition-all duration-200 shadow-xl"
               >
                 📍 Ingresar Ubicación
@@ -115,7 +146,7 @@ export default function Home() {
                     onKeyPress={(e) => e.key === 'Enter' && handleSetLocation()}
                   />
                 </div>
-                <button 
+                <button
                   onClick={handleSetLocation}
                   className="bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 font-bold px-8 py-4 rounded-xl hover:from-yellow-500 hover:to-orange-500 transform hover:scale-105 transition-all duration-200 shadow-lg whitespace-nowrap"
                 >
@@ -136,8 +167,8 @@ export default function Home() {
                   <p className="text-xl font-bold text-gray-800">{locate}</p>
                 </div>
               </div>
-              <a 
-                href="/oferts" 
+              <a
+                href="/oferts"
                 className="inline-block bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 font-bold px-8 py-4 rounded-xl hover:from-yellow-500 hover:to-orange-500 transform hover:scale-105 transition-all duration-200 shadow-lg"
               >
                 🎉 Explorar Menú Completo
@@ -152,37 +183,22 @@ export default function Home() {
         <div className="max-w-6xl mx-auto">
           <h3 className="text-2xl font-bold text-center text-gray-800 mb-8">Categorías Populares</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <a href="/oferts" className="group">
-              <div className="bg-gradient-to-br from-yellow-400 to-orange-400 p-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 text-center">
-                <div className="text-5xl mb-3">💰</div>
-                <p className="text-gray-900 font-bold text-lg">Ofertas</p>
-                <p className="text-gray-700 text-sm mt-1">Ahorra hoy</p>
-              </div>
-            </a>
-
-            <a href="/combos" className="group">
-              <div className="bg-gradient-to-br from-red-500 to-red-600 p-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 text-center">
-                <div className="text-5xl mb-3">🍕</div>
-                <p className="text-white font-bold text-lg">Combos</p>
-                <p className="text-red-100 text-sm mt-1">Para compartir</p>
-              </div>
-            </a>
-
-            <a href="/drinks" className="group">
-              <div className="bg-gradient-to-br from-blue-400 to-blue-500 p-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 text-center">
-                <div className="text-5xl mb-3">🥤</div>
-                <p className="text-white font-bold text-lg">Bebidas</p>
-                <p className="text-blue-100 text-sm mt-1">Refrescantes</p>
-              </div>
-            </a>
-
-            <a href="/pizzas" className="group">
-              <div className="bg-gradient-to-br from-orange-500 to-red-500 p-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 text-center">
-                <div className="text-5xl mb-3">🍕</div>
-                <p className="text-white font-bold text-lg">Pizzas</p>
-                <p className="text-orange-100 text-sm mt-1">Artesanales</p>
-              </div>
-            </a>
+            {categorias.length > 0 ? (
+              categorias.map((cat, index) => {
+                const style = getCategoryStyle(index);
+                return (
+                  <a key={cat.id_categoria} href={`/menu?categoria=${cat.id_categoria}`} className="group">
+                    <div className={`bg-gradient-to-br ${style.gradient} p-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 text-center h-full flex flex-col justify-center items-center`}>
+                      <div className="text-5xl mb-3">{style.icon}</div>
+                      <p className={`${style.textColor} font-bold text-lg`}>{cat.nombre}</p>
+                      <p className={`text-opacity-80 ${style.textColor} text-sm mt-1`}>{cat.descripcion || "Delicioso"}</p>
+                    </div>
+                  </a>
+                );
+              })
+            ) : (
+              <p className="col-span-4 text-center text-gray-500">Cargando categorías...</p>
+            )}
           </div>
         </div>
       </section>
@@ -199,32 +215,40 @@ export default function Home() {
           </div>
 
           <div className="flex overflow-x-auto gap-6 pb-6 snap-x snap-mandatory scrollbar-hide">
-            {pizzas.map((p) => (
-              <div 
-                key={p.id} 
-                className="flex-shrink-0 w-72 snap-center group"
-              >
-                <div className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border-2 border-gray-100 hover:border-red-300">
-                  <div className="relative overflow-hidden">
-                    <img 
-                      src={p.imagen} 
-                      alt={p.titulo} 
-                      className="w-full h-56 object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
-                    <div className="absolute top-4 right-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
-                      S/ {p.precio}
+            {pizzas.length > 0 ? (
+              pizzas.map((p) => (
+                <div
+                  key={p.id_repertorio}
+                  className="flex-shrink-0 w-72 snap-center group"
+                >
+                  <div className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border-2 border-gray-100 hover:border-red-300 h-full flex flex-col">
+                    <div className="relative overflow-hidden h-56">
+                      <img
+                        // Use provided image or fallback if null/empty
+                        src={p.imagen || "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400&h=400&fit=crop"}
+                        alt={p.titulo}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                      <div className="absolute top-4 right-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                        S/ {p.precio}
+                      </div>
+                    </div>
+                    <div className="p-6 flex flex-col flex-1">
+                      <h3 className="text-xl font-bold text-gray-800 mb-2">{p.titulo}</h3>
+                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">{p.descripcion}</p>
+                      <button className="mt-auto w-full bg-gradient-to-r from-red-600 to-red-500 text-white font-bold py-3 rounded-xl hover:from-red-700 hover:to-red-600 transform hover:scale-105 transition-all duration-200 shadow-lg">
+                        🛒 ¡Pedir Ahora!
+                      </button>
                     </div>
                   </div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold text-gray-800 mb-2">{p.titulo}</h3>
-                    <p className="text-gray-600 text-sm mb-4">Deliciosa pizza con ingredientes frescos</p>
-                    <button className="w-full bg-gradient-to-r from-red-600 to-red-500 text-white font-bold py-3 rounded-xl hover:from-red-700 hover:to-red-600 transform hover:scale-105 transition-all duration-200 shadow-lg">
-                      🛒 ¡Pedir Ahora!
-                    </button>
-                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="w-full text-center py-8">
+                <p className="text-gray-500">Cargando pizzas...</p>
+                {!loading && pizzas.length === 0 && <p className="text-gray-400 text-sm">No hay pizzas disponibles en este momento.</p>}
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>
@@ -242,8 +266,8 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {ofertas.map((of) => (
-              <div 
-                key={of.id} 
+              <div
+                key={of.id}
                 className="bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden border-4 border-red-600 group relative"
               >
                 {/* Badge de descuento */}
@@ -252,8 +276,8 @@ export default function Home() {
                 </div>
 
                 <div className="relative overflow-hidden">
-                  <img 
-                    src={of.imagen} 
+                  <img
+                    src={of.imagen}
                     className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
                     alt={of.titulo}
                   />
@@ -282,14 +306,14 @@ export default function Home() {
             Disfruta de las mejores pizzas con entrega rápida a tu puerta
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a 
-              href="/menu" 
+            <a
+              href="/menu"
               className="bg-white text-red-600 font-bold px-10 py-4 rounded-full hover:bg-gray-100 transform hover:scale-105 transition-all duration-200 shadow-xl"
             >
               🍕 Ver Menú Completo
             </a>
-            <a 
-              href="/contact" 
+            <a
+              href="/contact"
               className="bg-yellow-400 text-gray-900 font-bold px-10 py-4 rounded-full hover:bg-yellow-500 transform hover:scale-105 transition-all duration-200 shadow-xl"
             >
               📞 Llamar Ahora

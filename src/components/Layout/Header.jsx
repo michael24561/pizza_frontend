@@ -1,19 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [cartCount] = useState(3);
-  const [currentPath, setCurrentPath] = useState('/');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [currentPath, setCurrentPath] = useState(location.pathname);
+
+  useEffect(() => {
+    setCurrentPath(location.pathname);
+  }, [location]);
 
   const handleOrderClick = () => {
-    setCurrentPath('/menu');
-    setIsMenuOpen(false);
+    handleNavigation('/menu');
   };
 
   const handleCartClick = () => {
-    setCurrentPath('/carrito');
-    setIsMenuOpen(false);
+    handleNavigation('/carrito');
   };
 
   const handleProfileClick = () => {
@@ -21,7 +26,7 @@ const Header = () => {
   };
 
   const handleNavigation = (path) => {
-    setCurrentPath(path);
+    navigate(path);
     setIsMenuOpen(false);
     setIsProfileMenuOpen(false);
   };
@@ -29,7 +34,7 @@ const Header = () => {
   const handleLogout = () => {
     // Aquí puedes agregar lógica para limpiar el token de autenticación, etc.
     console.log('Cerrando sesión...');
-    
+
     // Redirigir al login
     window.location.href = '/login';
   };
@@ -58,11 +63,10 @@ const Header = () => {
             <div className="hidden lg:flex items-center gap-2">
               <button
                 onClick={() => handleNavigation('/')}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all duration-300 ${
-                  isActive('/')
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all duration-300 ${isActive('/')
                     ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg scale-105'
                     : 'text-gray-700 hover:bg-red-50 hover:text-red-600 hover:scale-105'
-                }`}
+                  }`}
               >
                 <span className="text-xl">🏠</span>
                 <span>Inicio</span>
@@ -70,11 +74,10 @@ const Header = () => {
 
               <button
                 onClick={() => handleNavigation('/menu')}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all duration-300 ${
-                  isActive('/menu')
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all duration-300 ${isActive('/menu')
                     ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg scale-105'
                     : 'text-gray-700 hover:bg-red-50 hover:text-red-600 hover:scale-105'
-                }`}
+                  }`}
               >
                 <span className="text-xl">🍕</span>
                 <span>Menú</span>
@@ -82,11 +85,10 @@ const Header = () => {
 
               <button
                 onClick={() => handleNavigation('/pedidos')}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all duration-300 ${
-                  isActive('/pedidos')
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all duration-300 ${isActive('/pedidos')
                     ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg scale-105'
                     : 'text-gray-700 hover:bg-red-50 hover:text-red-600 hover:scale-105'
-                }`}
+                  }`}
               >
                 <span className="text-xl">📦</span>
                 <span>Mis Pedidos</span>
@@ -94,11 +96,10 @@ const Header = () => {
 
               <button
                 onClick={() => handleNavigation('/contacto')}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all duration-300 ${
-                  isActive('/contacto')
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all duration-300 ${isActive('/contacto')
                     ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg scale-105'
                     : 'text-gray-700 hover:bg-red-50 hover:text-red-600 hover:scale-105'
-                }`}
+                  }`}
               >
                 <span className="text-xl">📞</span>
                 <span>Contacto</span>
@@ -195,18 +196,16 @@ const Header = () => {
 
         {/* Menú Móvil */}
         <div
-          className={`lg:hidden absolute top-full left-0 right-0 bg-white shadow-2xl border-t-2 border-red-200 transition-all duration-300 overflow-hidden ${
-            isMenuOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
-          }`}
+          className={`lg:hidden absolute top-full left-0 right-0 bg-white shadow-2xl border-t-2 border-red-200 transition-all duration-300 overflow-hidden ${isMenuOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
+            }`}
         >
           <div className="p-4 space-y-2">
             <button
               onClick={() => handleNavigation('/')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all duration-300 ${
-                isActive('/')
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all duration-300 ${isActive('/')
                   ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg'
                   : 'bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-600'
-              }`}
+                }`}
             >
               <span className="text-2xl">🏠</span>
               <span>Inicio</span>
@@ -214,11 +213,10 @@ const Header = () => {
 
             <button
               onClick={() => handleNavigation('/menu')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all duration-300 ${
-                isActive('/menu')
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all duration-300 ${isActive('/menu')
                   ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg'
                   : 'bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-600'
-              }`}
+                }`}
             >
               <span className="text-2xl">🍕</span>
               <span>Menú</span>
@@ -226,11 +224,10 @@ const Header = () => {
 
             <button
               onClick={() => handleNavigation('/pedidos')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all duration-300 ${
-                isActive('/pedidos')
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all duration-300 ${isActive('/pedidos')
                   ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg'
                   : 'bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-600'
-              }`}
+                }`}
             >
               <span className="text-2xl">📦</span>
               <span>Mis Pedidos</span>
@@ -238,11 +235,10 @@ const Header = () => {
 
             <button
               onClick={() => handleNavigation('/contacto')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all duration-300 ${
-                isActive('/contacto')
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all duration-300 ${isActive('/contacto')
                   ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg'
                   : 'bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-600'
-              }`}
+                }`}
             >
               <span className="text-2xl">📞</span>
               <span>Contacto</span>
