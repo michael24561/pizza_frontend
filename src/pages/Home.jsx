@@ -1,34 +1,44 @@
 import { useEffect, useState } from "react";
-import { repertorioService } from "../api/repertorioService";
+import { useNavigate } from "react-router-dom";
+import { productoService, promocionService } from "../api/productoService";
 import { categoriaService } from "../api/categoriaService";
+import sucursalService from "../api/sucursalService";
+import { useSucursal } from "../contexts/SucursalContext";
 
 export default function Home() {
+  const navigate = useNavigate();
   const [pizzas, setPizzas] = useState([]);
   const [categorias, setCategorias] = useState([]);
+  const [ofertas, setOfertas] = useState([]);
+  const { sucursalSeleccionada, setSucursalSeleccionada } = useSucursal();
+  const [sucursales, setSucursales] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Default hardcoded offers (as requested to keep these static)
-  const [ofertas, setOfertas] = useState([
-    { id: 1, titulo: "2x1 en Pizzas Medianas", imagen: "https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=400&h=300&fit=crop", descuento: "50%" },
-    { id: 2, titulo: "Combo Familiar", imagen: "https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?w=400&h=300&fit=crop", descuento: "30%" },
-    { id: 3, titulo: "Pizza + Bebida Gratis", imagen: "https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?w=400&h=300&fit=crop", descuento: "Gratis" }
-  ]);
-
-  const [locate, setLocate] = useState("");
-  const [inputValue, setInputValue] = useState("");
+  const [showSucursalList, setShowSucursalList] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [repertoriosRes, categoriasRes] = await Promise.all([
-          repertorioService.getAll(),
-          categoriaService.getAll()
+        const [productosRes, categoriasRes, promosRes, sucursalesRes] = await Promise.all([
+          productoService.getAll(),
+          categoriaService.getAll(),
+          promocionService.getAll(),
+          sucursalService.getAll()
         ]);
 
-        setPizzas(repertoriosRes.data);
+        // Extraer solo pizzas para mostrarlas en la sección principal
+        const allProducts = productosRes.data;
+        const onlyPizzas = allProducts.filter(p => p.categoria_nombre && p.categoria_nombre.toLowerCase().includes('pizza'));
+
+        console.log("Productos:", productosRes.data);
+        console.log("Categorias:", categoriasRes.data);
+        console.log("Sucursales:", sucursalesRes);
+
+        setPizzas(onlyPizzas);
         setCategorias(categoriasRes.data);
+        setOfertas(promosRes.data);
+        setSucursales(sucursalesRes.data || sucursalesRes);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching data de tallado:", error);
       } finally {
         setLoading(false);
       }
@@ -37,10 +47,9 @@ export default function Home() {
     fetchData();
   }, []);
 
-  const handleSetLocation = () => {
-    if (inputValue.trim()) {
-      setLocate(inputValue);
-    }
+  const handleSelectSucursal = (sucursal) => {
+    setSucursalSeleccionada(sucursal);
+    setShowSucursalList(false);
   };
 
   // Helper function to map category names to emojis/colors if desired, or just use defaults
@@ -86,19 +95,25 @@ export default function Home() {
               Un lugar cálido para probar cosas nuevas con sabor al hogar
             </h1>
 
-            {locate ? (
-              <a
-                href="/oferts"
-                className="inline-block bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 font-bold px-8 py-4 rounded-full hover:from-yellow-500 hover:to-orange-500 transform hover:scale-105 transition-all duration-200 shadow-xl"
-              >
-                🎉 Ver Ofertas Especiales
-              </a>
+            {sucursalSeleccionada ? (
+              <div className="flex flex-col items-start gap-4">
+                <div className="bg-green-500/20 px-4 py-2 rounded-lg border border-green-500/50 flex items-center gap-2">
+                  <span className="text-green-400">●</span>
+                  <span className="text-sm font-medium">Comprando en: {sucursalSeleccionada.direccion}</span>
+                </div>
+                <a
+                  href="/oferts"
+                  className="inline-block bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 font-bold px-8 py-4 rounded-full hover:from-yellow-500 hover:to-orange-500 transform hover:scale-105 transition-all duration-200 shadow-xl"
+                >
+                  🎉 Ver Ofertas Especiales
+                </a>
+              </div>
             ) : (
               <a
                 href="#ubicacion"
                 className="inline-block bg-gradient-to-r from-red-600 to-red-500 text-white font-bold px-8 py-4 rounded-full hover:from-red-700 hover:to-red-600 transform hover:scale-105 transition-all duration-200 shadow-xl"
               >
-                📍 Ingresar Ubicación
+                📍 Elige tu Sucursal
               </a>
             )}
           </div>
@@ -120,59 +135,67 @@ export default function Home() {
               🎯 Delivery a tu puerta
             </span>
             <h2 className="text-4xl font-bold text-gray-800 mb-4">
-              Bienvenido a Happy Pizza
+              {sucursalSeleccionada ? "Tu Tienda Happy Pizza" : "Bienvenido a Happy Pizza"}
             </h2>
             <p className="text-gray-600 text-lg">
-              Ingresa tu dirección para personalizar tu pedido y ver las mejores ofertas
+              {sucursalSeleccionada
+                ? `Estás comprando en nuestra sede de ${sucursalSeleccionada.direccion}`
+                : "Selecciona una sucursal para personalizar tu pedido y ver disponibilidad real"}
             </p>
           </div>
 
-          {!locate ? (
-            <div className="bg-gradient-to-br from-red-50 to-orange-50 p-8 rounded-3xl shadow-lg border-2 border-red-100">
-              <div className="flex flex-col md:flex-row gap-4 items-center justify-center">
-                <div className="relative flex-1 w-full max-w-md">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          {!sucursalSeleccionada ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+              {sucursales.map(s => (
+                <div
+                  key={s.id_sucursal}
+                  className="bg-white p-6 rounded-2xl shadow-lg border-2 border-gray-100 hover:border-red-400 transition-all cursor-pointer group"
+                  onClick={() => handleSelectSucursal(s)}
+                >
+                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4 group-hover:bg-red-500 transition-colors">
+                    <svg className="w-6 h-6 text-red-600 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                   </div>
-                  <input
-                    type="text"
-                    placeholder="Ej: Av. Principal 123, San Isidro"
-                    className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:border-red-500 focus:outline-none transition-colors text-gray-700"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSetLocation()}
-                  />
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">{s.direccion}</h3>
+                  <p className="text-gray-600 text-sm mb-4"><i className="bi bi-telephone"></i> {s.telefono}</p>
+                  <div className="flex items-center gap-2 text-green-600 font-semibold text-sm">
+                    <i className="bi bi-clock"></i>
+                    Abierto: {s.hora_inicio} - {s.hora_cierre}
+                  </div>
+                  <button className="w-full mt-6 bg-gray-100 text-gray-800 font-bold py-2 rounded-lg group-hover:bg-red-600 group-hover:text-white transition-all">
+                    Seleccionar Local
+                  </button>
                 </div>
-                <button
-                  onClick={handleSetLocation}
-                  className="bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 font-bold px-8 py-4 rounded-xl hover:from-yellow-500 hover:to-orange-500 transform hover:scale-105 transition-all duration-200 shadow-lg whitespace-nowrap"
-                >
-                  🍕 Ver Menú
-                </button>
-              </div>
+              ))}
             </div>
           ) : (
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-8 rounded-3xl shadow-lg border-2 border-green-200">
-              <div className="flex items-center justify-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-8 rounded-3xl shadow-lg border-2 border-green-200 max-w-xl mx-auto">
+              <div className="flex items-center justify-center gap-4 mb-6">
+                <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center shadow-inner">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
                 <div className="text-left">
-                  <p className="text-sm text-green-600 font-semibold">Entrega en:</p>
-                  <p className="text-xl font-bold text-gray-800">{locate}</p>
+                  <p className="text-sm text-green-600 font-semibold uppercase tracking-wider">Local Seleccionado:</p>
+                  <p className="text-2xl font-black text-gray-800">{sucursalSeleccionada.direccion}</p>
                 </div>
               </div>
-              <a
-                href="/oferts"
-                className="inline-block bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 font-bold px-8 py-4 rounded-xl hover:from-yellow-500 hover:to-orange-500 transform hover:scale-105 transition-all duration-200 shadow-lg"
-              >
-                🎉 Explorar Menú Completo
-              </a>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => setSucursalSeleccionada(null)}
+                  className="flex-1 bg-white text-gray-700 font-bold px-6 py-3 rounded-xl border-2 border-gray-200 hover:bg-gray-50 transition-all"
+                >
+                  🔄 Cambiar Local
+                </button>
+                <button
+                  onClick={() => navigate('/menu')}
+                  className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
+                >
+                  🚀 Hacer Pedido
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -216,33 +239,37 @@ export default function Home() {
 
           <div className="flex overflow-x-auto gap-6 pb-6 snap-x snap-mandatory scrollbar-hide">
             {pizzas.length > 0 ? (
-              pizzas.map((p) => (
-                <div
-                  key={p.id_repertorio}
-                  className="flex-shrink-0 w-72 snap-center group"
-                >
-                  <div className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border-2 border-gray-100 hover:border-red-300 h-full flex flex-col">
-                    <div className="relative overflow-hidden h-56">
-                      <img
-                        // Use provided image or fallback if null/empty
-                        src={p.imagen || "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400&h=400&fit=crop"}
-                        alt={p.titulo}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                      />
-                      <div className="absolute top-4 right-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
-                        S/ {p.precio}
+              pizzas.map((p) => {
+                const precioMostrar = p.variantes && p.variantes.length > 0 ? p.variantes[0].precio : 0;
+                return (
+                  <div
+                    key={p.id_producto}
+                    className="flex-shrink-0 w-72 snap-center group"
+                  >
+                    <div className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border-2 border-gray-100 hover:border-red-300 h-full flex flex-col">
+                      <div className="relative overflow-hidden h-56 cursor-pointer" onClick={() => navigate(`/detalle/producto/${p.id_producto}`)}>
+                        <img
+                          src={p.imagen && p.imagen.startsWith('http') ? p.imagen : "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400&h=400&fit=crop"}
+                          alt={p.nombre}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
+                        <div className="absolute top-4 right-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                          S/ {precioMostrar}
+                        </div>
+                      </div>
+                      <div className="p-6 flex flex-col flex-1">
+                        <h3 className="text-xl font-bold text-gray-800 mb-2 cursor-pointer" onClick={() => navigate(`/detalle/producto/${p.id_producto}`)}>{p.nombre}</h3>
+                        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{p.descripcion}</p>
+                        <button
+                          onClick={() => navigate(`/detalle/producto/${p.id_producto}`)}
+                          className="mt-auto w-full bg-gradient-to-r from-red-600 to-red-500 text-white font-bold py-3 rounded-xl hover:from-red-700 hover:to-red-600 transform hover:scale-105 transition-all duration-200 shadow-lg">
+                          🛒 ¡Pedir Ahora!
+                        </button>
                       </div>
                     </div>
-                    <div className="p-6 flex flex-col flex-1">
-                      <h3 className="text-xl font-bold text-gray-800 mb-2">{p.titulo}</h3>
-                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">{p.descripcion}</p>
-                      <button className="mt-auto w-full bg-gradient-to-r from-red-600 to-red-500 text-white font-bold py-3 rounded-xl hover:from-red-700 hover:to-red-600 transform hover:scale-105 transition-all duration-200 shadow-lg">
-                        🛒 ¡Pedir Ahora!
-                      </button>
-                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="w-full text-center py-8">
                 <p className="text-gray-500">Cargando pizzas...</p>
@@ -265,33 +292,41 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {ofertas.map((of) => (
-              <div
-                key={of.id}
-                className="bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden border-4 border-red-600 group relative"
-              >
-                {/* Badge de descuento */}
-                <div className="absolute top-4 left-4 z-10 bg-yellow-400 text-gray-900 px-4 py-2 rounded-full font-bold shadow-lg transform -rotate-12 group-hover:rotate-0 transition-transform">
-                  {of.descuento}
-                </div>
+            {ofertas.length > 0 ? (
+              ofertas.map((of) => (
+                <div
+                  key={of.id_promocion}
+                  className="bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden border-4 border-red-600 group relative cursor-pointer"
+                  onClick={() => navigate(`/detalle/promo/${of.id_promocion}`)}
+                >
+                  {/* Badge de precio */}
+                  <div className="absolute top-4 left-4 z-10 bg-yellow-400 text-gray-900 px-4 py-2 rounded-full font-bold shadow-lg transform -rotate-12 group-hover:rotate-0 transition-transform">
+                    S/ {of.precio}
+                  </div>
 
-                <div className="relative overflow-hidden">
-                  <img
-                    src={of.imagen}
-                    className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
-                    alt={of.titulo}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                </div>
+                  <div className="relative overflow-hidden">
+                    <img
+                      src={of.imagen && of.imagen.startsWith('http') ? of.imagen : "https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=400&h=300&fit=crop"}
+                      className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
+                      alt={of.titulo}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                  </div>
 
-                <div className="p-6">
-                  <h4 className="text-2xl font-bold text-gray-800 mb-4">{of.titulo}</h4>
-                  <button className="w-full bg-gradient-to-r from-red-600 to-red-500 text-white font-bold py-4 rounded-xl hover:from-red-700 hover:to-red-600 transform hover:scale-105 transition-all duration-200 shadow-lg">
-                    🎉 ¡Aprovechar Oferta!
-                  </button>
+                  <div className="p-6">
+                    <h4 className="text-2xl font-bold text-gray-800 mb-4">{of.titulo}</h4>
+                    <button className="w-full bg-gradient-to-r from-red-600 to-red-500 text-white font-bold py-4 rounded-xl hover:from-red-700 hover:to-red-600 transform hover:scale-105 transition-all duration-200 shadow-lg"
+                      onClick={(e) => { e.stopPropagation(); navigate(`/detalle/promo/${of.id_promocion}`); }}>
+                      🎉 ¡Aprovechar Oferta!
+                    </button>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="w-full text-center py-8 col-span-3">
+                <p className="text-gray-500">Cargando promociones...</p>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>

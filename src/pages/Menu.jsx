@@ -1,214 +1,117 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { productoService, promocionService } from '../api/productoService';
+import { carritoService } from '../api/carritoService';
 
 const Menu = () => {
-  const [activeCategory, setActiveCategory] = useState('pizzas');
+  const navigate = useNavigate();
+  const [activeCategory, setActiveCategory] = useState('todo');
   const [cart, setCart] = useState([]);
+  const [menuItems, setMenuItems] = useState({
+    todo: [],
+    pizzas: [],
+    bebidas: [],
+    postres: [],
+    extras: [],
+    combos: []
+  });
+  const [loading, setLoading] = useState(true);
 
   const categories = [
+    { id: 'todo', name: '🔥 Todo', icon: '🔥' },
     { id: 'pizzas', name: '🍕 Pizzas', icon: '🍕' },
     { id: 'bebidas', name: '🥤 Bebidas', icon: '🥤' },
     { id: 'postres', name: '🍰 Postres', icon: '🍰' },
     { id: 'combos', name: '🎉 Combos', icon: '🎉' },
-    { id: 'extras', name: '➕ Extras', icon: '➕' }
+    { id: 'extras', name: '🥣 Salsas', icon: '🥣' }
   ];
 
-  const menuItems = {
-    pizzas: [
-      {
-        id: 1,
-        name: "Pizza Margarita Happy",
-        description: "Salsa de tomate, mozzarella fresca, albahaca y aceite de oliva",
-        price: 28.90,
-        image: "🍕",
-        sizes: ["Personal", "Mediana", "Familiar"],
-        ingredients: ["Tomate", "Mozzarella", "Albahaca"],
-        popular: true
-      },
-      {
-        id: 2,
-        name: "Pizza Pepperoni Supreme",
-        description: "Doble pepperoni, queso mozzarella y salsa especial de la casa",
-        price: 32.90,
-        image: "🍕",
-        sizes: ["Personal", "Mediana", "Familiar"],
-        ingredients: ["Pepperoni", "Mozzarella", "Salsa especial"],
-        popular: true
-      },
-      {
-        id: 3,
-        name: "Pizza Hawaiana Feliz",
-        description: "Jamón, piña, queso mozzarella y salsa barbacoa",
-        price: 30.90,
-        image: "🍕",
-        sizes: ["Personal", "Mediana", "Familiar"],
-        ingredients: ["Jamón", "Piña", "Mozzarella", "Salsa barbacoa"]
-      },
-      {
-        id: 4,
-        name: "Pizza Vegetariana",
-        description: "Verduras frescas, champiñones, pimientos, aceitunas y cebolla",
-        price: 29.90,
-        image: "🍕",
-        sizes: ["Personal", "Mediana", "Familiar"],
-        ingredients: ["Pimientos", "Champiñones", "Aceitunas", "Cebolla"]
-      },
-      {
-        id: 5,
-        name: "Pizza Cuatro Quesos",
-        description: "Mezcla especial de mozzarella, parmesano, gorgonzola y fontina",
-        price: 34.90,
-        image: "🍕",
-        sizes: ["Personal", "Mediana", "Familiar"],
-        ingredients: ["Mozzarella", "Parmesano", "Gorgonzola", "Fontina"]
-      },
-      {
-        id: 6,
-        name: "Pizza Carnes Premium",
-        description: "Pepperoni, jamón, salchicha italiana y bacon crujiente",
-        price: 36.90,
-        image: "🍕",
-        sizes: ["Personal", "Mediana", "Familiar"],
-        ingredients: ["Pepperoni", "Jamón", "Salchicha", "Bacon"]
-      }
-    ],
-    bebidas: [
-      {
-        id: 7,
-        name: "Gaseosa Personal",
-        description: "Refresco de 500ml - Coca Cola, Inca Kola, Sprite o Fanta",
-        price: 8.90,
-        image: "🥤",
-        sizes: ["500ml"]
-      },
-      {
-        id: 8,
-        name: "Gaseosa Familiar",
-        description: "Refresco de 2L - Ideal para compartir",
-        price: 12.90,
-        image: "🥤",
-        sizes: ["2L"]
-      },
-      {
-        id: 9,
-        name: "Limonada Natural",
-        description: "Limonada fresca con hierbabuena - 500ml",
-        price: 10.90,
-        image: "🍹",
-        sizes: ["500ml"]
-      },
-      {
-        id: 10,
-        name: "Jugo Natural",
-        description: "Jugo de frutas naturales - Naranja, Maracuyá o Fresa",
-        price: 9.90,
-        image: "🧃",
-        sizes: ["500ml"]
-      }
-    ],
-    postres: [
-      {
-        id: 11,
-        name: "Brownie con Helado",
-        description: "Brownie de chocolate con bola de helado de vainilla",
-        price: 15.90,
-        image: "🍫"
-      },
-      {
-        id: 12,
-        name: "Cheesecake de Fresa",
-        description: "Delicioso cheesecake con salsa de fresa natural",
-        price: 18.90,
-        image: "🍰"
-      },
-      {
-        id: 13,
-        name: "Helado Artesanal",
-        description: "Bola de helado - Vainilla, Chocolate o Fresa",
-        price: 12.90,
-        image: "🍨"
-      }
-    ],
-    combos: [
-      {
-        id: 14,
-        name: "Combo Familiar",
-        description: "2 Pizzas Grandes + 2 Gaseosas 2L + Postre",
-        price: 79.90,
-        originalPrice: 95.90,
-        image: "🎉",
-        includes: ["2 Pizzas Grandes", "2 Gaseosas 2L", "1 Postre"]
-      },
-      {
-        id: 15,
-        name: "Combo Pareja",
-        description: "1 Pizza Mediana + 2 Gaseosas Personales",
-        price: 45.90,
-        originalPrice: 52.90,
-        image: "💑",
-        includes: ["1 Pizza Mediana", "2 Gaseosas 500ml"]
-      },
-      {
-        id: 16,
-        name: "Combo Individual",
-        description: "1 Pizza Personal + 1 Gaseosa Personal",
-        price: 32.90,
-        originalPrice: 37.80,
-        image: "👤",
-        includes: ["1 Pizza Personal", "1 Gaseosa 500ml"]
-      }
-    ],
-    extras: [
-      {
-        id: 17,
-        name: "Porción Extra de Queso",
-        description: "Queso mozzarella adicional para tu pizza",
-        price: 4.90,
-        image: "🧀"
-      },
-      {
-        id: 18,
-        name: "Salsa Extra",
-        description: "Salsa de tomate, barbacoa o ajo",
-        price: 3.90,
-        image: "🍅"
-      },
-      {
-        id: 19,
-        name: "Breadsticks",
-        description: "6 palitos de pan con salsa de ajo",
-        price: 12.90,
-        image: "🥖"
-      },
-      {
-        id: 20,
-        name: "Alitas de Pollo",
-        description: "6 alitas de pollo con salsa BBQ o Buffalo",
-        price: 18.90,
-        image: "🍗"
-      }
-    ]
+  useEffect(() => {
+    fetchMenuItems();
+  }, []);
+
+  const fetchMenuItems = async () => {
+    try {
+      setLoading(true);
+      // Fetch products and combos simultaneously
+      const [productsRes, combosRes] = await Promise.all([
+        productoService.getAll(),
+        promocionService.getAll()
+      ]);
+
+      const products = productsRes.data;
+      const combos = combosRes.data;
+
+      // Map backend data into categorical arrays
+      const categorisedMenu = {
+        pizzas: [],
+        bebidas: [],
+        postres: [],
+        extras: [],
+        combos: combos.map(c => ({
+          ...c,
+          id: c.id_promocion,
+          name: c.titulo,
+          price: parseFloat(c.precio),
+          image: c.imagen || '🎉'
+        }))
+      };
+
+      products.forEach(p => {
+        const catName = p.categoria_nombre ? p.categoria_nombre.toLowerCase() : '';
+        const item = {
+          ...p,
+          id: p.id_producto,
+          name: p.nombre,
+          image: p.imagen || '🍕',
+          price: p.variantes && p.variantes.length > 0 ? parseFloat(p.variantes[0].precio) : 0,
+          sizes: p.variantes ? p.variantes.map(v => v.tamaño) : []
+        };
+
+        if (catName.includes('pizza')) {
+          categorisedMenu.pizzas.push({ ...item, image: item.imagen || '🍕' });
+        }
+        else if (catName.includes('bebida') || catName.includes('gaseosa')) {
+          categorisedMenu.bebidas.push({ ...item, image: item.imagen || '🥤' });
+        }
+        else if (catName.includes('postre')) {
+          categorisedMenu.postres.push({ ...item, image: item.imagen || '🍰' });
+        }
+        else if (catName.includes('salsa') || catName.includes('crema')) {
+          // El cliente indicó visualizar SOLO las salsas aquí
+          const fallbackImg = '🥣';
+          categorisedMenu.extras.push({ ...item, image: item.imagen || fallbackImg });
+        }
+      });
+
+      // Armamos la categoría "Todo" juntando Combos, Pizzas y Bebidas
+      categorisedMenu.todo = [...categorisedMenu.combos, ...categorisedMenu.pizzas, ...categorisedMenu.bebidas];
+
+      setMenuItems(categorisedMenu);
+    } catch (error) {
+      console.error('Error fetching menu data', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const addToCart = (item) => {
-    setCart([...cart, { ...item, cartId: Date.now() }]);
-    // Efecto visual de agregado al carrito
-    const button = document.getElementById(`add-btn-${item.id}`);
-    if (button) {
-      button.textContent = '✅ Agregado';
-      setTimeout(() => {
-        button.textContent = '🛒 Agregar';
-      }, 2000);
-    }
+  const handleNavigateToDetail = (item) => {
+    // Si la categoría activa es 'combos', o si estamos en 'todo' y el item es promo,
+    // debemos indicarle el tipo correcto al router.
+    const isPromo = activeCategory === 'combos' || ('id_promocion' in item);
+    const type = isPromo ? 'promo' : 'producto';
+    navigate(`/detalle/${type}/${item.id}`);
   };
 
   const getCartCount = () => {
     return cart.reduce((total, item) => total + (item.quantity || 1), 0);
   };
 
-  // Función para redirigir al carrito
   const handleViewCart = () => {
     window.location.href = '/carrito';
   };
+
+  // Funciones de Menu carrito ya no necesitan `handleConfirmPromo` si se delega a Detalle
 
   return (
     <div className="menu-page">
@@ -246,76 +149,111 @@ const Menu = () => {
       {/* Items del Menú */}
       <section className="menu-items-section">
         <div className="container">
-          <div className="menu-grid">
-            {menuItems[activeCategory]?.map(item => (
-              <div key={item.id} className="menu-item-card">
-                {item.popular && <div className="popular-badge">🌟 Más Popular</div>}
-                {item.originalPrice && <div className="discount-badge">💥 Oferta</div>}
-                
-                <div className="item-image">
-                  {item.image}
-                </div>
-                
-                <div className="item-info">
-                  <h3 className="item-name">{item.name}</h3>
-                  <p className="item-description">{item.description}</p>
-                  
-                  {item.ingredients && (
-                    <div className="ingredients">
-                      <strong>Ingredientes:</strong> {item.ingredients.join(', ')}
-                    </div>
-                  )}
-                  
-                  {item.includes && (
-                    <div className="combo-includes">
-                      <strong>Incluye:</strong>
-                      <ul>
-                        {item.includes.map((include, index) => (
-                          <li key={index}>✓ {include}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  
-                  {item.sizes && (
-                    <div className="sizes">
-                      <strong>Tamaños:</strong>
-                      <div className="size-options">
-                        {item.sizes.map(size => (
-                          <span key={size} className="size-option">{size}</span>
-                        ))}
+          {loading ? (
+            <div className="loading-state">Cargando menú delicioso...</div>
+          ) : (
+            <>
+              {(activeCategory === 'todo' ? ['combos', 'pizzas', 'bebidas', 'postres'] : [activeCategory]).map((catKey) => {
+                const items = menuItems[catKey];
+
+                if (!items || items.length === 0) {
+                  if (activeCategory !== 'todo') {
+                    return (
+                      <div key={catKey} style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                        No hay productos disponibles en esta categoría actualmente.
                       </div>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="item-footer">
-                  <div className="price-section">
-                    {item.originalPrice && (
-                      <span className="original-price">S/. {item.originalPrice}</span>
+                    );
+                  }
+                  return null;
+                }
+
+                // Get the display name of this category
+                const catObj = categories.find(c => c.id === catKey);
+
+                return (
+                  <div key={catKey} className="category-section">
+                    {activeCategory === 'todo' && catObj && (
+                      <h2 style={{ marginBottom: '20px', color: '#333', borderBottom: '2px solid #A3D146', display: 'inline-block', paddingBottom: '5px' }}>
+                        {catObj.name}
+                      </h2>
                     )}
-                    <span className="current-price">S/. {item.price}</span>
+                    <div className="menu-grid" style={activeCategory === 'todo' ? { marginBottom: '40px' } : undefined}>
+                      {items.map(item => (
+                        <div key={item.id} className="menu-item-card">
+                          {item.popular && <div className="popular-badge">🌟 Más Popular</div>}
+                          {item.originalPrice && <div className="discount-badge">💥 Oferta</div>}
+
+                          <div className="item-image" onClick={() => handleNavigateToDetail(item)} style={{ cursor: 'pointer' }}>
+                            {item.image && (item.image.startsWith('http') || item.image.startsWith('/')) ? (
+                              <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '15px' }} />
+                            ) : (
+                              <div style={{ fontSize: '100px', display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>{item.image}</div>
+                            )}
+                          </div>
+
+                          <div className="item-info">
+                            <h3 className="item-name">{item.name}</h3>
+                            <p className="item-description">{item.description}</p>
+
+                            {item.ingredients && (
+                              <div className="ingredients">
+                                <strong>Ingredientes:</strong> {item.ingredients.join(', ')}
+                              </div>
+                            )}
+
+                            {item.includes && (
+                              <div className="combo-includes">
+                                <strong>Incluye:</strong>
+                                <ul>
+                                  {item.includes.map((include, index) => (
+                                    <li key={index}>✓ {include}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {item.sizes && (
+                              <div className="sizes">
+                                <strong>Tamaños:</strong>
+                                <div className="size-options">
+                                  {item.sizes.map(size => (
+                                    <span key={size} className="size-option">{size}</span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="item-footer">
+                            <div className="price-section">
+                              {item.originalPrice && (
+                                <span className="original-price">S/. {item.originalPrice}</span>
+                              )}
+                              <span className="current-price">S/. {item.price}</span>
+                            </div>
+                            <button
+                              className="btn-add-to-cart"
+                              onClick={() => handleNavigateToDetail(item)}
+                            >
+                              Ver Opciones
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <button
-                    id={`add-btn-${item.id}`}
-                    className="btn-add-to-cart"
-                    onClick={() => addToCart(item)}
-                  >
-                    🛒 Agregar
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+                );
+              })}
+            </>
+          )}
         </div>
       </section>
 
-      {/* Carrito Flotante */}
       {cart.length > 0 && (
         <div className="floating-cart">
           <div className="cart-summary">
             <span>{getCartCount()} items en el carrito</span>
-            <button 
+            <button
               className="btn-view-cart"
               onClick={handleViewCart}
             >

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useSucursal } from '../../contexts/SucursalContext';
 
 const Header = () => {
+  const { sucursalSeleccionada } = useSucursal();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [cartCount] = useState(3);
@@ -57,6 +59,14 @@ const Header = () => {
                 </h1>
                 <p className="text-xs text-red-600 font-bold">Sabor que te hace feliz</p>
               </div>
+              {sucursalSeleccionada && (
+                <div className="bg-red-50 px-3 py-1.5 rounded-lg border border-red-200 flex items-center gap-2 animate-fade-in">
+                  <span className="text-red-500 animate-pulse">●</span>
+                  <span className="text-[10px] uppercase font-black text-red-700 tracking-wider">
+                    {sucursalSeleccionada.direccion}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Menú de Navegación - Desktop */}
@@ -64,8 +74,8 @@ const Header = () => {
               <button
                 onClick={() => handleNavigation('/')}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all duration-300 ${isActive('/')
-                    ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg scale-105'
-                    : 'text-gray-700 hover:bg-red-50 hover:text-red-600 hover:scale-105'
+                  ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg scale-105'
+                  : 'text-gray-700 hover:bg-red-50 hover:text-red-600 hover:scale-105'
                   }`}
               >
                 <span className="text-xl">🏠</span>
@@ -75,8 +85,8 @@ const Header = () => {
               <button
                 onClick={() => handleNavigation('/menu')}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all duration-300 ${isActive('/menu')
-                    ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg scale-105'
-                    : 'text-gray-700 hover:bg-red-50 hover:text-red-600 hover:scale-105'
+                  ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg scale-105'
+                  : 'text-gray-700 hover:bg-red-50 hover:text-red-600 hover:scale-105'
                   }`}
               >
                 <span className="text-xl">🍕</span>
@@ -86,8 +96,8 @@ const Header = () => {
               <button
                 onClick={() => handleNavigation('/pedidos')}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all duration-300 ${isActive('/pedidos')
-                    ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg scale-105'
-                    : 'text-gray-700 hover:bg-red-50 hover:text-red-600 hover:scale-105'
+                  ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg scale-105'
+                  : 'text-gray-700 hover:bg-red-50 hover:text-red-600 hover:scale-105'
                   }`}
               >
                 <span className="text-xl">📦</span>
@@ -97,8 +107,8 @@ const Header = () => {
               <button
                 onClick={() => handleNavigation('/contacto')}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all duration-300 ${isActive('/contacto')
-                    ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg scale-105'
-                    : 'text-gray-700 hover:bg-red-50 hover:text-red-600 hover:scale-105'
+                  ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg scale-105'
+                  : 'text-gray-700 hover:bg-red-50 hover:text-red-600 hover:scale-105'
                   }`}
               >
                 <span className="text-xl">📞</span>
@@ -203,8 +213,8 @@ const Header = () => {
             <button
               onClick={() => handleNavigation('/')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all duration-300 ${isActive('/')
-                  ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg'
-                  : 'bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-600'
+                ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg'
+                : 'bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-600'
                 }`}
             >
               <span className="text-2xl">🏠</span>
@@ -214,8 +224,8 @@ const Header = () => {
             <button
               onClick={() => handleNavigation('/menu')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all duration-300 ${isActive('/menu')
-                  ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg'
-                  : 'bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-600'
+                ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg'
+                : 'bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-600'
                 }`}
             >
               <span className="text-2xl">🍕</span>
@@ -225,8 +235,8 @@ const Header = () => {
             <button
               onClick={() => handleNavigation('/pedidos')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all duration-300 ${isActive('/pedidos')
-                  ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg'
-                  : 'bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-600'
+                ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg'
+                : 'bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-600'
                 }`}
             >
               <span className="text-2xl">📦</span>
@@ -236,8 +246,8 @@ const Header = () => {
             <button
               onClick={() => handleNavigation('/contacto')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all duration-300 ${isActive('/contacto')
-                  ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg'
-                  : 'bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-600'
+                ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg'
+                : 'bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-600'
                 }`}
             >
               <span className="text-2xl">📞</span>
