@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { productoService, promocionService } from '../api/productoService';
+import api from '../api';
+import { AuthContext } from '../contexts/AuthContext';
 import './ProductDetail.css';
 
 const ProductDetail = () => {
@@ -9,6 +11,7 @@ const ProductDetail = () => {
 
     const [item, setItem] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [adding, setAdding] = useState(false);
 
     // For single product selections
     const [selectedVariant, setSelectedVariant] = useState(null);
@@ -53,17 +56,21 @@ const ProductDetail = () => {
             let salsas = [];
             let extras = [];
 
-            // Helper to get all options
+            // A. Global Extras and Salsas (available for everyone)
             products.forEach(p => {
                 const catName = p.categoria_nombre ? p.categoria_nombre.toLowerCase() : '';
                 if (p.variantes && p.variantes.length > 0) {
                     p.variantes.forEach(v => {
                         const tamano = v.tamaño ? v.tamaño.toLowerCase() : '';
                         if (catName.includes('salsa') || catName.includes('crema')) {
-                            salsas.push({ id: v.id_variante, name: p.nombre, price: v.precio, img: p.imagen || '🥣' });
+                            if (!salsas.find(s => s.id === v.id_variante)) {
+                                salsas.push({ id: v.id_variante, name: p.nombre, price: v.precio, img: p.imagen || '🥣' });
+                            }
                         }
                         else if (catName.includes('extra') || catName.includes('adicional')) {
-                            extras.push({ id: v.id_variante, name: p.nombre, size: tamano, price: v.precio, img: p.imagen || '🍟' });
+                            if (!extras.find(e => e.id === v.id_variante)) {
+                                extras.push({ id: v.id_variante, name: p.nombre, size: tamano, price: v.precio, img: p.imagen || '🍟' });
+                            }
                         }
                     });
                 }
@@ -72,59 +79,53 @@ const ProductDetail = () => {
             setSalsaOptions(salsas);
             setExtraOptions(extras);
 
+            // B. Promo specific items (Pizzas and Drinks)
             if (type === 'producto') {
                 if (currentItem.variantes && currentItem.variantes.length > 0) {
                     setSelectedVariant(currentItem.variantes[0].id_variante);
                 }
             } else {
-                const promoDesc = (currentItem?.descripcion || '').toLowerCase();
-                const isFamiliar = promoDesc.includes('familiar') || promoDesc.includes('grande');
-                const isMediana = promoDesc.includes('mediana');
-                const isPersonal = promoDesc.includes('personal') || promoDesc.includes('pequeña');
+                // Use the details populated in the backend
+                if (currentItem.detalles && currentItem.detalles.length > 0) {
+                    currentItem.detalles.forEach(det => {
+                        const v = det.variante_info;
+                        if (!v) return;
 
-                const reqDrink500 = promoDesc.includes('500ml') || promoDesc.includes('personal');
-                const reqDrink1L = promoDesc.includes('1l') || promoDesc.includes('1.5l') || promoDesc.includes('litro');
+                        const catName = (v.producto_categoria_nombre || '').toLowerCase();
+                        // Also check the category of the variant itself if not provided directly
+                        const isPizza = v.producto_nombre?.toLowerCase().includes('pizza') || (v.categoria_info?.nombre || '').toLowerCase().includes('pizza');
+                        const isDrink = v.producto_nombre?.toLowerCase().includes('bebida') || (v.categoria_info?.nombre || '').toLowerCase().includes('bebida') || v.producto_nombre?.toLowerCase().includes('gaseosa');
 
-                products.forEach(p => {
-                    const catName = p.categoria_nombre ? p.categoria_nombre.toLowerCase() : '';
-                    if (p.variantes && p.variantes.length > 0) {
-                        p.variantes.forEach(v => {
-                            const tamano = v.tamaño ? v.tamaño.toLowerCase() : '';
-
-                            if (catName.includes('pizza')) {
-                                const esFamiliar = tamano.includes('familiar');
-                                const esMediana = tamano.includes('mediana');
-                                const esPersonal = tamano.includes('personal') || tamano.includes('chica');
-
-                                if ((isFamiliar && esFamiliar) || (isMediana && esMediana) || (isPersonal && esPersonal) || (!isFamiliar && !isMediana && !isPersonal)) {
-                                    pizzas.push({ id: v.id_variante, name: p.nombre, size: v.tamaño, price: v.precio, img: p.imagen || '🍕' });
-                                }
+                        if (isPizza) {
+                            if (!pizzas.find(p => p.id === v.id_variante)) {
+                                pizzas.push({ id: v.id_variante, name: v.producto_nombre, size: v.tamaño, price: v.precio, img: v.producto_imagen || '🍕' });
                             }
-                            else if (catName.includes('bebida') || catName.includes('gaseosa')) {
-                                const es500 = tamano.includes('500');
-                                const es1L = tamano.includes('1') || tamano.includes('2l');
-
-                                if ((reqDrink500 && es500) || (reqDrink1L && es1L) || (!reqDrink500 && !reqDrink1L)) {
-                                    drinks.push({ id: v.id_variante, name: p.nombre, size: v.tamaño, price: v.precio, img: p.imagen || '🥤' });
-                                }
+                        } else if (isDrink) {
+                            if (!drinks.find(d => d.id === v.id_variante)) {
+                                drinks.push({ id: v.id_variante, name: v.producto_nombre, size: v.tamaño, price: v.precio, img: v.producto_imagen || '🥤' });
                             }
-                        });
-                    }
-                });
+                        }
+                    });
+                }
 
                 setPizzaOptions(pizzas);
                 setDrinkOptions(drinks);
 
                 // Auto select logic
                 const newSelections = {};
-                const defaultPizza = pizzas.find(p => p.name.toLowerCase().includes('americana')) || pizzas[0];
-                if (defaultPizza) newSelections['pizza1'] = defaultPizza.id;
+                if (pizzas.length > 0) {
+                    const defaultPizza = pizzas.find(p => p.name.toLowerCase().includes('americana')) || pizzas[0];
+                    newSelections['pizza1'] = defaultPizza.id;
 
-                if (promoDesc.includes('2 pizzas')) {
-                    newSelections['pizza2'] = pizzas[1] ? pizzas[1].id : defaultPizza?.id;
+                    const itemDesc = (currentItem?.descripcion || '').toLowerCase();
+                    if (itemDesc.includes('2 pizza')) {
+                        newSelections['pizza2'] = pizzas[1] ? pizzas[1].id : defaultPizza.id;
+                    }
                 }
 
-                if (drinks[0]) newSelections['bebida1'] = drinks[0].id;
+                if (drinks.length > 0) {
+                    newSelections['bebida1'] = drinks[0].id;
+                }
                 setSelections(newSelections);
             }
 
@@ -149,9 +150,58 @@ const ProductDetail = () => {
         });
     };
 
-    const handleAddToCart = () => {
-        // Here you would connect logic to save into local cart or send API to cart
-        navigate('/menu');
+    const { user } = useContext(AuthContext); // Cleaned up AuthContext usage
+
+    const handleAddToCart = async () => {
+        if (!user) {
+            alert("⚠️ Debes iniciar sesión para agregar productos al carrito.");
+            navigate('/login');
+            return;
+        }
+
+        setAdding(true);
+        try {
+            // 1. Obtener o Crear Carrito para el cliente
+            let carritoId;
+            const cartRes = await api.get('/carritos/', { params: { cliente_id: user.id_cliente } });
+
+            if (cartRes.data.length > 0) {
+                carritoId = cartRes.data[0].id_carrito;
+            } else {
+                const newCartRes = await api.post('/carritos/', { cliente: user.id_cliente });
+                carritoId = newCartRes.data.id_carrito;
+            }
+
+            // 2. Preparar el item según el tipo
+            const payload = {
+                carrito: carritoId,
+                cantidad: 1,
+            };
+
+            if (type === 'producto') {
+                payload.variante = selectedVariant;
+            } else {
+                payload.promocion = id;
+            }
+
+            // Capturar TODAS las opciones seleccionadas (extras, salsas, combos, etc.)
+            const opciones = [];
+            Object.entries(selections).forEach(([key, val]) => {
+                if (val) opciones.push({ variante: val, cantidad: 1 });
+            });
+            payload.opciones_promocion = opciones;
+
+            // 3. Agregar al backend
+            await api.post('/carritos-items/', payload);
+
+            alert("✅ ¡Producto agregado al carrito!");
+            navigate('/carrito');
+        } catch (error) {
+            console.error("Error al agregar al carrito:", error);
+            alert("❌ Hubo un error al agregar el producto. Inténtalo de nuevo.");
+        } finally {
+            setAdding(false);
+        }
     };
 
     if (loading) return <div className="product-detail-loading">Cargando...</div>;
@@ -165,6 +215,17 @@ const ProductDetail = () => {
         const v = item.variantes.find(v => v.id_variante === selectedVariant);
         if (v) basePrice = v.precio;
     }
+
+    // CALCULAR PRECIO DINÁMICO (Base + Extras/Salsas)
+    let totalPrice = parseFloat(basePrice);
+    Object.values(selections).forEach(variantId => {
+        // Buscar el precio de la variante seleccionada en las listas de opciones
+        // Solo sumamos el precio si es un extra o salsa (en combos el precio base ya incluye lo principal)
+        const option = [...salsaOptions, ...extraOptions].find(o => o.id === variantId);
+        if (option && option.price) {
+            totalPrice += parseFloat(option.price);
+        }
+    });
 
     return (
         <div className="product-detail-page">
@@ -197,7 +258,7 @@ const ProductDetail = () => {
                         <p className="product-description">{itemDesc}</p>
 
                         <div className="product-price">
-                            S/ {parseFloat(basePrice).toFixed(2)}
+                            S/ {parseFloat(totalPrice).toFixed(2)}
                         </div>
 
                         {/* SELECTIONS */}
@@ -390,8 +451,12 @@ const ProductDetail = () => {
                         </div>
 
                         <div className="add-to-cart-wrapper">
-                            <button className="btn-final-add" onClick={handleAddToCart}>
-                                Agregar a mi pedido
+                            <button
+                                className="btn-final-add"
+                                onClick={handleAddToCart}
+                                disabled={adding}
+                            >
+                                {adding ? 'Agregando...' : 'Agregar a mi pedido'}
                             </button>
                         </div>
                     </div>

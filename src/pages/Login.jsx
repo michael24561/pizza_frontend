@@ -1,6 +1,7 @@
 import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
+import { useSucursal } from "../contexts/SucursalContext";
 import api from "../api";
 
 export default function Login() {
@@ -10,6 +11,7 @@ export default function Login() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const { loginWithToken } = useContext(AuthContext);
+  const { setSucursalSeleccionada } = useSucursal();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,7 +24,8 @@ export default function Login() {
       const detail = resp.data.detail?.toLowerCase();
 
       if (detail === "inicio de sesión exitoso") {
-        loginWithToken("", "Cookie", { usuario });
+        setSucursalSeleccionada(null); // Limpiar sucursal previa al iniciar nueva sesión
+        loginWithToken("", "Cookie", resp.data.user);
         navigate("/");
         return;
       }
@@ -39,7 +42,7 @@ export default function Login() {
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-red-950 to-black flex items-center justify-center p-4 overflow-hidden">
       {/* Fondo de pizza con overlay oscuro - FIJO */}
-      <div 
+      <div
         className="fixed inset-0 opacity-20 z-0"
         style={{
           backgroundImage: 'url("https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1920&h=1080&fit=crop")',
@@ -47,7 +50,7 @@ export default function Login() {
           backgroundPosition: 'center',
         }}
       ></div>
-      
+
       {/* Patrón de pizzas pequeñas estáticas */}
       <div className="fixed inset-0 pointer-events-none z-0">
         {[...Array(15)].map((_, i) => (
@@ -81,13 +84,13 @@ export default function Login() {
                   backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,.1) 10px, rgba(255,255,255,.1) 20px)`
                 }}></div>
               </div>
-              
+
               {/* Pizzas decorativas en el header */}
               <div className="absolute top-2 left-4 text-xl opacity-20">🍕</div>
               <div className="absolute top-2 right-4 text-lg opacity-20">🍕</div>
               <div className="absolute bottom-1 left-1/4 text-base opacity-20">🍕</div>
               <div className="absolute bottom-1 right-1/4 text-lg opacity-20">🍕</div>
-              
+
               {/* Logo principal */}
               <div className="relative mb-2">
                 <div className="w-16 h-16 mx-auto bg-white rounded-full flex items-center justify-center shadow-2xl border-4 border-yellow-400 relative">
@@ -96,7 +99,7 @@ export default function Login() {
                   <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-white/20 to-transparent"></div>
                 </div>
               </div>
-              
+
               <h1 className="text-2xl font-black text-white tracking-wide mb-1 drop-shadow-lg relative">
                 HAPPY PIZZA
               </h1>

@@ -4,16 +4,17 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true, // Habilitar envío de cookies
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Interceptor para agregar Token Authentication (como usa Django REST)
+// Interceptor para agregar Token Authentication (si se usa token manual)
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Token ${token}`; // Cambiado a Token para Django REST
+  if (token && token !== "") {
+    config.headers.Authorization = `Token ${token}`;
   }
   return config;
 });
@@ -23,9 +24,9 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      // Solo limpiamos estado, no redirigimos a la fuerza para seguir el deseo del usuario
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
     }
     return Promise.reject(error);
   }

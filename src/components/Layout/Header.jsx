@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSucursal } from '../../contexts/SucursalContext';
+import { AuthContext } from '../../contexts/AuthContext';
+import StoreLocator from './StoreLocator';
 
 const Header = () => {
-  const { sucursalSeleccionada } = useSucursal();
+  const { sucursalSeleccionada, setSucursalSeleccionada } = useSucursal();
+  const { user, logout } = useContext(AuthContext);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isStoreLocatorOpen, setIsStoreLocatorOpen] = useState(false);
   const [cartCount] = useState(3);
   const location = useLocation();
   const navigate = useNavigate();
@@ -34,11 +38,10 @@ const Header = () => {
   };
 
   const handleLogout = () => {
-    // Aquí puedes agregar lógica para limpiar el token de autenticación, etc.
     console.log('Cerrando sesión...');
-
-    // Redirigir al login
-    window.location.href = '/login';
+    logout();
+    setSucursalSeleccionada(null); // Limpiar la sucursal también
+    setIsProfileMenuOpen(false);
   };
 
   const isActive = (path) => currentPath === path;
@@ -94,6 +97,14 @@ const Header = () => {
               </button>
 
               <button
+                onClick={() => setIsStoreLocatorOpen(true)}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all duration-300 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:scale-105`}
+              >
+                <span className="text-xl">📍</span>
+                <span>Tiendas</span>
+              </button>
+
+              <button
                 onClick={() => handleNavigation('/pedidos')}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all duration-300 ${isActive('/pedidos')
                   ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg scale-105'
@@ -146,46 +157,67 @@ const Header = () => {
                   className="hidden sm:flex items-center gap-2 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-bold px-4 py-2.5 rounded-xl transition-all duration-300 transform hover:scale-110 shadow-lg"
                 >
                   <span className="text-xl">👤</span>
-                  <span className="hidden md:inline">Mi Cuenta</span>
+                  <span className="hidden md:inline">
+                    {user ? (user.usuario || 'Mi Cuenta') : 'Mi Cuenta'}
+                  </span>
                 </button>
 
                 {/* Menú desplegable del perfil */}
                 {isProfileMenuOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-2xl border-2 border-red-100 overflow-hidden z-50">
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-2xl border-2 border-red-100 overflow-hidden z-50">
                     <div className="p-2">
-                      <button
-                        onClick={() => handleNavigation('/perfil')}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all duration-200 font-semibold"
-                      >
-                        <span className="text-xl">👤</span>
-                        <span>Mi Perfil</span>
-                      </button>
+                      {user && (
+                        <div className="px-3 py-2 mb-2 bg-red-50 rounded-lg">
+                          <p className="text-xs text-red-600 font-bold uppercase tracking-wider">Bienvenido</p>
+                          <p className="text-gray-900 font-black truncate">{user.usuario}</p>
+                        </div>
+                      )}
+                      {user ? (
+                        <>
+                          <button
+                            onClick={() => handleNavigation('/perfil')}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all duration-200 font-semibold"
+                          >
+                            <span className="text-xl">👤</span>
+                            <span>Mi Perfil</span>
+                          </button>
 
-                      <button
-                        onClick={() => handleNavigation('/pedidos')}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all duration-200 font-semibold"
-                      >
-                        <span className="text-xl">📦</span>
-                        <span>Mis Pedidos</span>
-                      </button>
+                          <button
+                            onClick={() => handleNavigation('/pedidos')}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all duration-200 font-semibold"
+                          >
+                            <span className="text-xl">📦</span>
+                            <span>Mis Pedidos</span>
+                          </button>
 
-                      <button
-                        onClick={() => handleNavigation('/configuracion')}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all duration-200 font-semibold"
-                      >
-                        <span className="text-xl">⚙️</span>
-                        <span>Configuración</span>
-                      </button>
+                          <div className="border-t border-gray-200 my-1"></div>
 
-                      <div className="border-t border-gray-200 my-1"></div>
-
-                      <button
-                        onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg transition-all duration-200 font-bold"
-                      >
-                        <span className="text-xl">🚪</span>
-                        <span>Cerrar Sesión</span>
-                      </button>
+                          <button
+                            onClick={handleLogout}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg transition-all duration-200 font-bold"
+                          >
+                            <span className="text-xl">🚪</span>
+                            <span>Cerrar Sesión</span>
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => handleNavigation('/login')}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all duration-200 font-semibold"
+                          >
+                            <span className="text-xl">🔑</span>
+                            <span>Iniciar Sesión</span>
+                          </button>
+                          <button
+                            onClick={() => handleNavigation('/register')}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg transition-all duration-200 font-bold"
+                          >
+                            <span className="text-xl">✍️</span>
+                            <span>Registrarse</span>
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
@@ -233,6 +265,17 @@ const Header = () => {
             </button>
 
             <button
+              onClick={() => {
+                setIsStoreLocatorOpen(true);
+                setIsMenuOpen(false);
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-300`}
+            >
+              <span className="text-2xl">📍</span>
+              <span>Tiendas</span>
+            </button>
+
+            <button
               onClick={() => handleNavigation('/pedidos')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all duration-300 ${isActive('/pedidos')
                 ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg'
@@ -254,30 +297,41 @@ const Header = () => {
               <span>Contacto</span>
             </button>
 
-            <button
-              onClick={() => handleNavigation('/perfil')}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-300 sm:hidden"
-            >
-              <span className="text-2xl">👤</span>
-              <span>Mi Perfil</span>
-            </button>
-
-            <button
-              onClick={() => handleNavigation('/configuracion')}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-300 sm:hidden"
-            >
-              <span className="text-2xl">⚙️</span>
-              <span>Configuración</span>
-            </button>
-
-            {/* Botón de cerrar sesión en móvil */}
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all duration-300 sm:hidden"
-            >
-              <span className="text-2xl">🚪</span>
-              <span>Cerrar Sesión</span>
-            </button>
+            {user ? (
+              <>
+                <button
+                  onClick={() => handleNavigation('/perfil')}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-300 sm:hidden"
+                >
+                  <span className="text-2xl">👤</span>
+                  <span>Mi Perfil: {user.usuario}</span>
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all duration-300 sm:hidden"
+                >
+                  <span className="text-2xl">🚪</span>
+                  <span>Cerrar Sesión</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => handleNavigation('/login')}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-300 sm:hidden"
+                >
+                  <span className="text-2xl">🔑</span>
+                  <span>Iniciar Sesión</span>
+                </button>
+                <button
+                  onClick={() => handleNavigation('/register')}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all duration-300 sm:hidden"
+                >
+                  <span className="text-2xl">✍️</span>
+                  <span>Registrarse</span>
+                </button>
+              </>
+            )}
 
             <button
               onClick={handleOrderClick}
@@ -305,6 +359,11 @@ const Header = () => {
           onClick={() => setIsProfileMenuOpen(false)}
         ></div>
       )}
+
+      <StoreLocator
+        isOpen={isStoreLocatorOpen}
+        onClose={() => setIsStoreLocatorOpen(false)}
+      />
     </header>
   );
 };
