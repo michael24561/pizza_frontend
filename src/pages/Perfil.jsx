@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { useLocation } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
 import { pedidoService } from '../api/pedidoService';
 import api from '../api';
@@ -11,6 +12,16 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
+  const location = useLocation();
+
+  useEffect(() => {
+    // Detectar si venimos de un pago exitoso
+    const params = new URLSearchParams(location.search);
+    if (params.get('payment') === 'success') {
+      setMessage({ text: '¡Pago procesado con éxito! Tu pizza está en camino.', type: 'success' });
+      setActiveTab('pedidos'); // Abrir pestaña de pedidos automáticamente
+    }
+  }, [location]);
 
   // Estado para los campos editables
   const [formData, setFormData] = useState({

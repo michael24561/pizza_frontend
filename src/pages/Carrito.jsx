@@ -14,6 +14,7 @@ const CartPage = () => {
   const [deliveryOption, setDeliveryOption] = useState('delivery');
   const [address, setAddress] = useState('');
   const [error, setError] = useState('');
+  const [createdPedidoId, setCreatedPedidoId] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -102,14 +103,39 @@ const CartPage = () => {
       };
 
       const response = await api.post('/pedidos/', pedidoData);
+      const pedidoId = response.data.id_pedido;
 
-      // Éxito: Limpiamos localmente y redirigimos al perfil para ver el pedido
-      setCart(null);
-      alert("¡Pedido realizado con éxito!");
-      navigate('/perfil');
+      // 2. Crear la preferencia de Mercado Pago inmediatamente
+      const prefResponse = await api.post('/mercadopago/preference/', {
+        id_pedido: pedidoId
+      });
+
+      // 3. Redirigir al usuario al Checkout de Mercado Pago
+      // Usamos init_point (o sandbox_init_point para pruebas)
+      const initPoint = prefResponse.data.init_point;
+      
+      setCart(null); // Limpiar carrito antes de irse
+      window.location.href = initPoint;
+      
     } catch (error) {
       console.error("Error al procesar pedido:", error);
-      const msg = error.response?.data?.error || "Hubo un error al procesar tu pedido. Verifica el stock.";
+      // Intentamos obtener el mensaje de error específico del backend
+      let msg = "Hubo un error al procesar tu pedido.";
+      
+      if (error.response?.data) {
+        if (typeof error.response.data.error === 'string') {
+          msg = error.response.data.error;
+        } else if (Array.isArray(error.response.data.error)) {
+          msg = error.response.data.error[0];
+        } else if (error.response.data.detail) {
+          msg = typeof error.response.data.detail === 'string' 
+            ? error.response.data.detail 
+            : JSON.stringify(error.response.data.detail);
+        }
+      } else {
+        msg += ` (Status: ${error.response?.status || 'Unknown'})`;
+      }
+      
       setError(msg);
     } finally {
       setProcessing(false);
@@ -323,7 +349,7 @@ const CartPage = () => {
                 onClick={handleCheckout}
                 disabled={processing || !sucursalSeleccionada}
               >
-                {processing ? 'Procesando...' : 'FINALIZAR PEDIDO ✓'}
+                {processing ? 'Redirigiendo a Mercado Pago...' : 'FINALIZAR PEDIDO ✓'}
               </button>
 
               <button
