@@ -1,245 +1,507 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { productoService, promocionService } from '../api/productoService';
-import { carritoService } from '../api/carritoService';
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-const Menu = () => {
+import { motion } from "framer-motion";
+
+import { useQuery } from "@tanstack/react-query";
+
+import toast from "react-hot-toast";
+
+import {
+  productoService,
+  promocionService,
+} from "../api/productoService";
+
+/* ─────────────────────────────────────────
+   UI HELPERS
+───────────────────────────────────────── */
+
+const categories = [
+  {
+    id: "todo",
+    name: "Todo",
+  },
+  {
+    id: "pizzas",
+    name: "Pizzas",
+  },
+  {
+    id: "bebidas",
+    name: "Bebidas",
+  },
+  {
+    id: "postres",
+    name: "Postres",
+  },
+  {
+    id: "combos",
+    name: "Combos",
+  },
+  {
+    id: "extras",
+    name: "Salsas",
+  },
+];
+
+/* ─────────────────────────────────────────
+   SKELETON
+───────────────────────────────────────── */
+
+function SkeletonCard() {
+  return (
+    <div className="bg-white rounded-[28px] overflow-hidden border border-gray-100 animate-pulse">
+      <div className="h-64 bg-gray-200" />
+
+      <div className="p-6">
+        <div className="h-6 bg-gray-200 rounded-full w-2/3 mb-4" />
+
+        <div className="h-4 bg-gray-100 rounded-full mb-2" />
+
+        <div className="h-4 bg-gray-100 rounded-full w-4/5 mb-8" />
+
+        <div className="h-12 bg-gray-200 rounded-2xl" />
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────
+   MENU
+───────────────────────────────────────── */
+
+export default function Menu() {
   const navigate = useNavigate();
-  const [activeCategory, setActiveCategory] = useState('todo');
-  const [cart, setCart] = useState([]);
-  const [menuItems, setMenuItems] = useState({
-    todo: [],
-    pizzas: [],
-    bebidas: [],
-    postres: [],
-    extras: [],
-    combos: []
+
+  const [activeCategory, setActiveCategory] =
+    useState("todo");
+
+  /* ─────────────────────────────────────────
+     QUERIES
+  ───────────────────────────────────────── */
+
+  const {
+    data: productos = [],
+    isLoading: loadingProductos,
+    error: errorProductos,
+  } = useQuery({
+    queryKey: ["productos"],
+    queryFn: async () => {
+      const res =
+        await productoService.getAll();
+
+      return res.data || [];
+    },
+    staleTime: 1000 * 60 * 5,
   });
-  const [loading, setLoading] = useState(true);
 
-  const categories = [
-    { id: 'todo', name: '🔥 Todo', icon: '🔥' },
-    { id: 'pizzas', name: '🍕 Pizzas', icon: '🍕' },
-    { id: 'bebidas', name: '🥤 Bebidas', icon: '🥤' },
-    { id: 'postres', name: '🍰 Postres', icon: '🍰' },
-    { id: 'combos', name: '🎉 Combos', icon: '🎉' },
-    { id: 'extras', name: '🥣 Salsas', icon: '🥣' }
-  ];
+  const {
+    data: promociones = [],
+    isLoading: loadingPromos,
+    error: errorPromos,
+  } = useQuery({
+    queryKey: ["promociones"],
+    queryFn: async () => {
+      const res =
+        await promocionService.getAll();
 
-  useEffect(() => {
-    fetchMenuItems();
-  }, []);
+      return res.data || [];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
 
-  const fetchMenuItems = async () => {
-    try {
-      setLoading(true);
-      // Fetch products and combos simultaneously
-      const [productsRes, combosRes] = await Promise.all([
-        productoService.getAll(),
-        promocionService.getAll()
-      ]);
+  const loading =
+    loadingProductos || loadingPromos;
 
-      const products = productsRes.data;
-      const combos = combosRes.data;
+  /* ─────────────────────────────────────────
+     MAP DATA
+  ───────────────────────────────────────── */
 
-      // Map backend data into categorical arrays
-      const categorisedMenu = {
-        pizzas: [],
-        bebidas: [],
-        postres: [],
-        extras: [],
-        combos: combos.map(c => ({
-          ...c,
-          id: c.id_promocion,
-          name: c.titulo,
-          price: parseFloat(c.precio),
-          image: c.imagen || '🎉'
-        }))
+  const menuItems = useMemo(() => {
+    const data = {
+      pizzas: [],
+      bebidas: [],
+      postres: [],
+      extras: [],
+      combos: [],
+      todo: [],
+    };
+
+    /* PROMOS */
+
+    data.combos = promociones.map((promo) => ({
+      ...promo,
+      id: promo.id_promocion,
+      type: "promo",
+      name: promo.titulo,
+      description:
+        promo.descripcion ||
+        "Promoción especial",
+      image: promo.imagen,
+      price: parseFloat(promo.precio || 0),
+    }));
+
+    /* PRODUCTOS */
+
+    productos.forEach((p) => {
+      const cat =
+        p.categoria_nombre?.toLowerCase() || "";
+
+      const item = {
+        ...p,
+        id: p.id_producto,
+        type: "producto",
+        name: p.nombre,
+        description: p.descripcion,
+        image: p.imagen,
+        price:
+          p.variantes?.[0]?.precio || 0,
+        sizes:
+          p.variantes?.map(
+            (v) => v.tamaño
+          ) || [],
       };
 
-      products.forEach(p => {
-        const catName = p.categoria_nombre ? p.categoria_nombre.toLowerCase() : '';
-        const item = {
-          ...p,
-          id: p.id_producto,
-          name: p.nombre,
-          image: p.imagen || '🍕',
-          price: p.variantes && p.variantes.length > 0 ? parseFloat(p.variantes[0].precio) : 0,
-          sizes: p.variantes ? p.variantes.map(v => v.tamaño) : []
-        };
+      if (cat.includes("pizza")) {
+        data.pizzas.push(item);
+      } else if (
+        cat.includes("bebida") ||
+        cat.includes("gaseosa")
+      ) {
+        data.bebidas.push(item);
+      } else if (
+        cat.includes("postre")
+      ) {
+        data.postres.push(item);
+      } else if (
+        cat.includes("salsa") ||
+        cat.includes("crema")
+      ) {
+        data.extras.push(item);
+      }
+    });
 
-        if (catName.includes('pizza')) {
-          categorisedMenu.pizzas.push({ ...item, image: item.imagen || '🍕' });
-        }
-        else if (catName.includes('bebida') || catName.includes('gaseosa')) {
-          categorisedMenu.bebidas.push({ ...item, image: item.imagen || '🥤' });
-        }
-        else if (catName.includes('postre')) {
-          categorisedMenu.postres.push({ ...item, image: item.imagen || '🍰' });
-        }
-        else if (catName.includes('salsa') || catName.includes('crema')) {
-          // El cliente indicó visualizar SOLO las salsas aquí
-          const fallbackImg = '🥣';
-          categorisedMenu.extras.push({ ...item, image: item.imagen || fallbackImg });
-        }
-      });
+    data.todo = [
+      ...data.combos,
+      ...data.pizzas,
+      ...data.bebidas,
+      ...data.postres,
+    ];
 
-      // Armamos la categoría "Todo" juntando Combos, Pizzas y Bebidas
-      categorisedMenu.todo = [...categorisedMenu.combos, ...categorisedMenu.pizzas, ...categorisedMenu.bebidas];
+    return data;
+  }, [productos, promociones]);
 
-      setMenuItems(categorisedMenu);
-    } catch (error) {
-      console.error('Error fetching menu data', error);
-    } finally {
-      setLoading(false);
-    }
+  /* ─────────────────────────────────────────
+     NAVIGATE
+  ───────────────────────────────────────── */
+
+  const handleNavigateToDetail = (
+    item
+  ) => {
+    navigate(
+      `/detalle/${item.type}/${item.id}`
+    );
   };
 
-  const handleNavigateToDetail = (item) => {
-    // Si la categoría activa es 'combos', o si estamos en 'todo' y el item es promo,
-    // debemos indicarle el tipo correcto al router.
-    const isPromo = activeCategory === 'combos' || ('id_promocion' in item);
-    const type = isPromo ? 'promo' : 'producto';
-    navigate(`/detalle/${type}/${item.id}`);
-  };
+  /* ─────────────────────────────────────────
+     ERROR
+  ───────────────────────────────────────── */
 
-  const getCartCount = () => {
-    return cart.reduce((total, item) => total + (item.quantity || 1), 0);
-  };
+  if (errorProductos || errorPromos) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-6">
+        <div className="bg-white border border-red-100 rounded-[32px] p-10 max-w-lg w-full text-center shadow-xl">
+          <div className="w-16 h-16 rounded-full bg-red-100 mx-auto mb-6 flex items-center justify-center">
+            <div className="w-3 h-3 rounded-full bg-red-500" />
+          </div>
 
-  const handleViewCart = () => {
-    window.location.href = '/carrito';
-  };
+          <h2 className="text-3xl font-black text-gray-900 mb-4">
+            No pudimos cargar el menú
+          </h2>
 
-  // Funciones de Menu carrito ya no necesitan `handleConfirmPromo` si se delega a Detalle
+          <p className="text-gray-500 mb-8">
+            Ocurrió un problema al obtener
+            los productos.
+          </p>
+
+          <button
+            onClick={() =>
+              window.location.reload()
+            }
+            className="bg-gray-900 text-white px-8 py-4 rounded-2xl font-semibold hover:opacity-90 transition"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  /* ─────────────────────────────────────────
+     RENDER
+  ───────────────────────────────────────── */
 
   return (
-    <div className="menu-page">
-      {/* Header del Menú */}
-      <section className="menu-hero">
-        <div className="container">
-          <div className="menu-header">
-            <h1>🍕 Menú Happy Pizza</h1>
-            <p>Explora nuestra deliciosa selección de pizzas y acompañamientos</p>
-            <div className="cart-indicator">
-              <span className="cart-count">🛒 {getCartCount()} items</span>
+    <div className="min-h-screen bg-[#fafafa]">
+      {/* HERO */}
+
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0">
+          <img
+            src="https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1600"
+            alt="Happy Pizza"
+            className="w-full h-full object-cover"
+          />
+
+          <div className="absolute inset-0 bg-black/70" />
+        </div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10 min-h-[420px] flex items-center">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-3 bg-white/10 border border-white/10 backdrop-blur-md rounded-full px-5 py-2 mb-8">
+              <div className="w-2 h-2 rounded-full bg-red-500" />
+
+              <span className="text-white text-sm font-medium uppercase tracking-wider">
+                Happy Pizza
+              </span>
             </div>
+
+            <h1 className="text-white text-5xl md:text-7xl font-black leading-tight mb-6">
+              Menú artesanal
+              <span className="block text-red-500">
+                moderno y delicioso
+              </span>
+            </h1>
+
+            <p className="text-lg text-gray-300 leading-relaxed max-w-2xl">
+              Explora pizzas premium,
+              promociones y bebidas con
+              una experiencia visual más
+              limpia y profesional.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* Categorías */}
-      <section className="categories-section">
-        <div className="container">
-          <div className="categories-grid">
-            {categories.map(category => (
+      {/* CATEGORIES */}
+
+      <section className="sticky top-20 z-30 bg-[#fafafa]/90 backdrop-blur-xl border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10 py-5 overflow-x-auto">
+          <div className="flex gap-4 min-w-max">
+            {categories.map((category) => (
               <button
                 key={category.id}
-                className={`category-btn ${activeCategory === category.id ? 'active' : ''}`}
-                onClick={() => setActiveCategory(category.id)}
+                onClick={() =>
+                  setActiveCategory(
+                    category.id
+                  )
+                }
+                className={`
+                  px-6
+                  py-3
+                  rounded-2xl
+                  text-sm
+                  font-semibold
+                  transition-all
+                  duration-300
+                  whitespace-nowrap
+                  ${
+                    activeCategory ===
+                    category.id
+                      ? "bg-gray-900 text-white shadow-lg"
+                      : "bg-white border border-gray-200 text-gray-700 hover:border-gray-900"
+                  }
+                `}
               >
-                <span className="category-icon">{category.icon}</span>
-                <span className="category-name">{category.name}</span>
+                {category.name}
               </button>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Items del Menú */}
-      <section className="menu-items-section">
-        <div className="container">
+      {/* MENU */}
+
+      <section className="py-20 px-6 lg:px-10">
+        <div className="max-w-7xl mx-auto">
           {loading ? (
-            <div className="loading-state">Cargando menú delicioso...</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {[1, 2, 3, 4].map((i) => (
+                <SkeletonCard key={i} />
+              ))}
+            </div>
           ) : (
             <>
-              {(activeCategory === 'todo' ? ['combos', 'pizzas', 'bebidas', 'postres'] : [activeCategory]).map((catKey) => {
-                const items = menuItems[catKey];
+              {(activeCategory === "todo"
+                ? [
+                    "combos",
+                    "pizzas",
+                    "bebidas",
+                    "postres",
+                  ]
+                : [activeCategory]
+              ).map((catKey) => {
+                const items =
+                  menuItems[catKey];
 
-                if (!items || items.length === 0) {
-                  if (activeCategory !== 'todo') {
-                    return (
-                      <div key={catKey} style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
-                        No hay productos disponibles en esta categoría actualmente.
-                      </div>
-                    );
-                  }
+                if (
+                  !items ||
+                  items.length === 0
+                ) {
                   return null;
                 }
 
-                // Get the display name of this category
-                const catObj = categories.find(c => c.id === catKey);
+                const category =
+                  categories.find(
+                    (c) =>
+                      c.id === catKey
+                  );
 
                 return (
-                  <div key={catKey} className="category-section">
-                    {activeCategory === 'todo' && catObj && (
-                      <h2 style={{ marginBottom: '20px', color: '#333', borderBottom: '2px solid #A3D146', display: 'inline-block', paddingBottom: '5px' }}>
-                        {catObj.name}
-                      </h2>
+                  <div
+                    key={catKey}
+                    className="mb-20"
+                  >
+                    {activeCategory ===
+                      "todo" && (
+                      <div className="mb-10">
+                        <h2 className="text-4xl font-black text-gray-900">
+                          {
+                            category?.name
+                          }
+                        </h2>
+                      </div>
                     )}
-                    <div className="menu-grid" style={activeCategory === 'todo' ? { marginBottom: '40px' } : undefined}>
-                      {items.map(item => (
-                        <div key={item.id} className="menu-item-card">
-                          {item.popular && <div className="popular-badge">🌟 Más Popular</div>}
-                          {item.originalPrice && <div className="discount-badge">💥 Oferta</div>}
 
-                          <div className="item-image" onClick={() => handleNavigateToDetail(item)} style={{ cursor: 'pointer' }}>
-                            {item.image && (item.image.startsWith('http') || item.image.startsWith('/')) ? (
-                              <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '15px' }} />
-                            ) : (
-                              <div style={{ fontSize: '100px', display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>{item.image}</div>
-                            )}
-                          </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
+                      {items.map(
+                        (
+                          item,
+                          index
+                        ) => (
+                          <motion.div
+                            key={
+                              item.id
+                            }
+                            initial={{
+                              opacity: 0,
+                              y: 40,
+                            }}
+                            whileInView={{
+                              opacity: 1,
+                              y: 0,
+                            }}
+                            transition={{
+                              duration: 0.4,
+                              delay:
+                                index *
+                                0.05,
+                            }}
+                            viewport={{
+                              once: true,
+                            }}
+                            className="group bg-white rounded-[32px] overflow-hidden border border-gray-100 hover:shadow-2xl transition-all duration-500"
+                          >
+                            {/* IMAGE */}
 
-                          <div className="item-info">
-                            <h3 className="item-name">{item.name}</h3>
-                            <p className="item-description">{item.description}</p>
-
-                            {item.ingredients && (
-                              <div className="ingredients">
-                                <strong>Ingredientes:</strong> {item.ingredients.join(', ')}
-                              </div>
-                            )}
-
-                            {item.includes && (
-                              <div className="combo-includes">
-                                <strong>Incluye:</strong>
-                                <ul>
-                                  {item.includes.map((include, index) => (
-                                    <li key={index}>✓ {include}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-
-                            {item.sizes && (
-                              <div className="sizes">
-                                <strong>Tamaños:</strong>
-                                <div className="size-options">
-                                  {item.sizes.map(size => (
-                                    <span key={size} className="size-option">{size}</span>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="item-footer">
-                            <div className="price-section">
-                              {item.originalPrice && (
-                                <span className="original-price">S/. {item.originalPrice}</span>
-                              )}
-                              <span className="current-price">S/. {item.price}</span>
-                            </div>
-                            <button
-                              className="btn-add-to-cart"
-                              onClick={() => handleNavigateToDetail(item)}
+                            <div
+                              className="relative overflow-hidden h-72 cursor-pointer"
+                              onClick={() =>
+                                handleNavigateToDetail(
+                                  item
+                                )
+                              }
                             >
-                              Ver Opciones
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                              <img
+                                src={
+                                  item.image
+                                    ? item.image
+                                    : "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800"
+                                }
+                                alt={
+                                  item.name
+                                }
+                                loading="lazy"
+                                decoding="async"
+                                className="w-full h-full object-cover group-hover:scale-105 transition duration-700"
+                              />
+
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+
+                              <div className="absolute top-5 left-5 bg-white text-gray-900 px-4 py-2 rounded-full font-bold shadow-xl">
+                                S/{" "}
+                                {parseFloat(
+                                  item.price
+                                ).toFixed(
+                                  2
+                                )}
+                              </div>
+
+                              {item.type ===
+                                "promo" && (
+                                <div className="absolute top-5 right-5 bg-red-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-xl">
+                                  Promo
+                                </div>
+                              )}
+                            </div>
+
+                            {/* CONTENT */}
+
+                            <div className="p-7">
+                              <h3 className="text-2xl font-black text-gray-900 mb-3">
+                                {
+                                  item.name
+                                }
+                              </h3>
+
+                              <p className="text-gray-500 leading-relaxed text-sm mb-8 line-clamp-2">
+                                {
+                                  item.description
+                                }
+                              </p>
+
+                              {item.sizes &&
+                                item
+                                  .sizes
+                                  .length >
+                                  0 && (
+                                  <div className="flex flex-wrap gap-2 mb-8">
+                                    {item.sizes.map(
+                                      (
+                                        size
+                                      ) => (
+                                        <span
+                                          key={
+                                            size
+                                          }
+                                          className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold"
+                                        >
+                                          {
+                                            size
+                                          }
+                                        </span>
+                                      )
+                                    )}
+                                  </div>
+                                )}
+
+                              <button
+                                onClick={() => {
+                                  handleNavigateToDetail(
+                                    item
+                                  );
+
+                                  toast.success(
+                                    "Abriendo producto"
+                                  );
+                                }}
+                                className="w-full bg-gray-900 hover:bg-black text-white py-4 rounded-2xl font-semibold transition-all duration-300"
+                              >
+                                Ver producto
+                              </button>
+                            </div>
+                          </motion.div>
+                        )
+                      )}
                     </div>
                   </div>
                 );
@@ -248,22 +510,6 @@ const Menu = () => {
           )}
         </div>
       </section>
-
-      {cart.length > 0 && (
-        <div className="floating-cart">
-          <div className="cart-summary">
-            <span>{getCartCount()} items en el carrito</span>
-            <button
-              className="btn-view-cart"
-              onClick={handleViewCart}
-            >
-              Ver Carrito
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
-};
-
-export default Menu;
+}
