@@ -14,12 +14,9 @@ const api = axios.create({
 // Agregar token automáticamente a cada request (si existe)
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-
   if (token) {
     config.headers.Authorization = `Token ${token}`; 
-    // 👆 IMPORTANTE: Porque tu backend usa TokenAuth de DRF
   }
-
   return config;
 });
 

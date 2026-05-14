@@ -18,9 +18,7 @@ const CartPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Si la sesión aún está cargando, esperamos a que termine
     if (authLoading) return;
-
     if (user) {
       fetchCart();
     } else {
@@ -29,12 +27,11 @@ const CartPage = () => {
   }, [user, authLoading]);
 
   const fetchCart = async () => {
-    setLoading(true); // Aseguramos que se inicie el estado de carga
+    setLoading(true);
     try {
       const response = await api.get('/carritos/', {
         params: { cliente_id: user.id_cliente }
       });
-
       if (response.data.length > 0) {
         setCart(response.data[0]);
       } else {
@@ -51,10 +48,8 @@ const CartPage = () => {
   const updateQuantity = async (itemId, currentQty, delta) => {
     const newQty = currentQty + delta;
     if (newQty < 1) return;
-
     try {
       await api.patch(`/carritos-items/${itemId}/`, { cantidad: newQty });
-      // Refetch para asegurar totales y subtotales correctos del backend
       fetchCart();
     } catch (error) {
       console.error("Error al actualizar cantidad:", error);
@@ -63,10 +58,8 @@ const CartPage = () => {
 
   const removeItem = async (itemId) => {
     if (!window.confirm("¿Seguro que quieres quitar este producto?")) return;
-
     try {
       await api.delete(`/carritos-items/${itemId}/`);
-      // Refetch para asegurar totales correctos del backend
       fetchCart();
     } catch (error) {
       console.error("Error al eliminar item:", error);
@@ -89,53 +82,56 @@ const CartPage = () => {
     setError('');
 
     try {
-      // El backend crea el pedido y jala los items del carrito automáticamente cliente-sucursal
-      const pedidoData = {
+      const checkoutData = {
         sucursal: sucursalSeleccionada.id_sucursal,
         direccion: deliveryOption === 'pickup'
           ? `Recojo en Tienda: ${sucursalSeleccionada.direccion}`
           : address,
         cliente: user.id_cliente,
-        codigo: `HP-${Math.floor(Date.now() / 1000)}`,
-        estado: 'pendiente',
         tipo_entrega: deliveryOption === 'pickup' ? 'recojo' : 'delivery',
         costo_delivery: deliveryOption === 'pickup' ? '0.00' : '5.00'
       };
 
-      const response = await api.post('/pedidos/', pedidoData);
-      const pedidoId = response.data.id_pedido;
+      console.log("DEBUG: Iniciando checkout...", checkoutData);
+      
+      // Llamamos directamente a la creación de preferencia
+      const prefResponse = await api.post('/mercadopago/preference/', checkoutData);
 
-      // 2. Crear la preferencia de Mercado Pago inmediatamente
-      const prefResponse = await api.post('/mercadopago/preference/', {
-        id_pedido: pedidoId
-      });
-
-      // 3. Redirigir al usuario al Checkout de Mercado Pago
-      // Usamos init_point (o sandbox_init_point para pruebas)
       const initPoint = prefResponse.data.init_point;
+      const preferenceId = prefResponse.data.preference_id;
       
-      setCart(null); // Limpiar carrito antes de irse
+      // Guardar info de la sesión de checkout en localStorage para recuperarla al volver
+      localStorage.setItem('pending_checkout', JSON.stringify({
+        preference_id: preferenceId,
+        timestamp: Date.now()
+      }));
+      console.log("DEBUG: Checkout session guardada en localStorage. Preference:", preferenceId);
+      
+      // No vaciamos el carrito aquí, se vaciará al confirmar el pago en el backend
       window.location.href = initPoint;
-      
+
     } catch (error) {
+      // ← LOGS DE DEBUG
+      console.error("RESPUESTA COMPLETA:", JSON.stringify(error.response?.data, null, 2));
+      console.error("STATUS:", error.response?.status);
       console.error("Error al procesar pedido:", error);
-      // Intentamos obtener el mensaje de error específico del backend
+
       let msg = "Hubo un error al procesar tu pedido.";
-      
+
       if (error.response?.data) {
         if (typeof error.response.data.error === 'string') {
           msg = error.response.data.error;
         } else if (Array.isArray(error.response.data.error)) {
           msg = error.response.data.error[0];
         } else if (error.response.data.detail) {
-          msg = typeof error.response.data.detail === 'string' 
-            ? error.response.data.detail 
+          msg = typeof error.response.data.detail === 'string'
+            ? error.response.data.detail
             : JSON.stringify(error.response.data.detail);
         }
       } else {
         msg += ` (Status: ${error.response?.status || 'Unknown'})`;
       }
-      
+
       setError(msg);
     } finally {
       setProcessing(false);
@@ -169,7 +165,6 @@ const CartPage = () => {
     );
   }
 
-  // El backend ya nos da el total del carrito calculado con extras
   const cartSubtotal = cart?.total || 0;
   const deliveryFee = deliveryOption === 'delivery' ? 5.00 : 0;
   const total = parseFloat(cartSubtotal) + deliveryFee;
@@ -194,7 +189,6 @@ const CartPage = () => {
         </div>
       ) : (
         <div className="cart-grid">
-          {/* Lista de Items */}
           <div className="cart-items-wrapper">
             {cart.items.map(item => (
               <div key={item.id_item} className="cart-item-card">
@@ -220,7 +214,6 @@ const CartPage = () => {
                     {item.variante_info?.tamaño || 'Promoción'}
                   </span>
 
-                  {/* MOSTRAR OPCIONES (EXTRAS, SALSAS, ETC) */}
                   {item.opciones_promocion && item.opciones_promocion.length > 0 && (
                     <div className="cart-item-options-list">
                       {item.opciones_promocion.map((opc, idx) => (
@@ -238,28 +231,14 @@ const CartPage = () => {
                 </div>
                 <div className="cart-item-actions">
                   <div className="quantity-picker">
-                    <button
-                      className="qty-btn"
-                      onClick={() => updateQuantity(item.id_item, item.cantidad, -1)}
-                    >
-                      -
-                    </button>
+                    <button className="qty-btn" onClick={() => updateQuantity(item.id_item, item.cantidad, -1)}>-</button>
                     <span className="qty-value">{item.cantidad}</span>
-                    <button
-                      className="qty-btn"
-                      onClick={() => updateQuantity(item.id_item, item.cantidad, 1)}
-                    >
-                      +
-                    </button>
+                    <button className="qty-btn" onClick={() => updateQuantity(item.id_item, item.cantidad, 1)}>+</button>
                   </div>
                   <div className="cart-item-total">
                     S/ {parseFloat(item.subtotal).toFixed(2)}
                   </div>
-                  <button
-                    className="remove-item-btn"
-                    onClick={() => removeItem(item.id_item)}
-                    title="Eliminar"
-                  >
+                  <button className="remove-item-btn" onClick={() => removeItem(item.id_item)} title="Eliminar">
                     🗑️
                   </button>
                 </div>
@@ -267,12 +246,10 @@ const CartPage = () => {
             ))}
           </div>
 
-          {/* Resumen */}
           <div className="cart-summary-wrapper">
             <div className="summary-card">
               <h2 className="summary-title">Resumen de Pago</h2>
 
-              {/* Sucursal Check */}
               {sucursalSeleccionada ? (
                 <div className="branch-info-box">
                   <span className="branch-icon">🏪</span>
@@ -291,7 +268,6 @@ const CartPage = () => {
                 </div>
               )}
 
-              {/* Delivery Options */}
               <div className="delivery-toggle">
                 <button
                   className={`toggle-btn ${deliveryOption === 'delivery' ? 'active' : ''}`}
@@ -307,7 +283,6 @@ const CartPage = () => {
                 </button>
               </div>
 
-              {/* Address Input */}
               {deliveryOption === 'delivery' && (
                 <div className="address-section animate-fade-in">
                   <label className="address-label">Dirección de Entrega</label>
@@ -321,7 +296,6 @@ const CartPage = () => {
                 </div>
               )}
 
-              {/* Totals */}
               <div className="price-breakdown">
                 <div className="summary-row">
                   <span>Subtotal</span>

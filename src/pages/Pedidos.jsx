@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
 import api from '../api';
 
@@ -8,11 +9,101 @@ const Pedidos = () => {
   const [orders, setOrders] = useState({ activos: [], historial: [] });
   const [loading, setLoading] = useState(true);
 
+  const [searchParams] = useSearchParams();
+  const [confirmingPayment, setConfirmingPayment] = useState(false);
+
   useEffect(() => {
+    const processPayment = async () => {
+      // === OPCIÓN 1: Detectar parámetros de redirección de Mercado Pago en la URL ===
+      const paymentId = searchParams.get('payment_id') || searchParams.get('collection_id');
+      const mpStatus = searchParams.get('status') || searchParams.get('collection_status');
+      const externalRef = searchParams.get('external_reference');
+
+      // Log completo de TODOS los params
+      const allParams = {};
+      searchParams.forEach((value, key) => { allParams[key] = value; });
+      console.log("[Pedidos] TODOS los URL Params:", allParams);
+
+      if (paymentId && mpStatus === 'approved' && externalRef) {
+        console.log("[Pedidos] ✅ Pago detectado via URL params, confirmando...");
+        await handlePaymentWithParams(paymentId, externalRef);
+        localStorage.removeItem('pending_checkout');
+        return;
+      }
+
+      // === OPCIÓN 2: Verificar si hay un checkout pendiente en localStorage ===
+      const pendingCheckout = localStorage.getItem('pending_checkout');
+      if (pendingCheckout) {
+        try {
+          const { preference_id, timestamp } = JSON.parse(pendingCheckout);
+          // Solo verificar si fue creado hace menos de 1 hora
+          const oneHour = 60 * 60 * 1000;
+          if (Date.now() - timestamp < oneHour) {
+            console.log("[Pedidos] 🔄 Checkout pendiente encontrado, verificando con backend...");
+            await handlePendingCheckout(preference_id);
+          } else {
+            console.log("[Pedidos] ⏰ Checkout expirado, limpiando localStorage");
+            localStorage.removeItem('pending_checkout');
+          }
+        } catch (e) {
+          console.error("[Pedidos] Error parseando pending_checkout:", e);
+          localStorage.removeItem('pending_checkout');
+        }
+      }
+    };
+
+    processPayment();
+
     if (user?.id_cliente) {
       fetchOrders();
     }
-  }, [user]);
+  }, [user, searchParams]);
+
+  // Confirmar pago cuando tenemos los params de MP en la URL
+  const handlePaymentWithParams = async (paymentId, externalRef) => {
+    try {
+      setConfirmingPayment(true);
+      console.log("[Pedidos] Enviando confirmación al backend:", { paymentId, externalRef });
+      
+      const response = await api.post('/mercadopago/confirmar-pago-manual/', {
+        payment_id: paymentId,
+        external_reference: externalRef
+      });
+      
+      console.log("[Pedidos] ✅ Respuesta de confirmación:", response.data);
+      await fetchOrders();
+    } catch (error) {
+      console.error("[Pedidos] ❌ Error al confirmar pago:", error?.response?.data || error.message);
+    } finally {
+      setConfirmingPayment(false);
+    }
+  };
+
+  // Verificar checkout pendiente consultando al backend via preference_id
+  const handlePendingCheckout = async (preferenceId) => {
+    try {
+      setConfirmingPayment(true);
+      console.log("[Pedidos] Verificando checkout:", preferenceId);
+      
+      const response = await api.post('/mercadopago/verificar-checkout/', {
+        preference_id: preferenceId
+      });
+      
+      console.log("[Pedidos] Respuesta verificación:", response.data);
+      
+      if (response.data.status === 'approved' || response.data.status === 'already_processed') {
+        console.log("[Pedidos] ✅ Pago confirmado! Pedido:", response.data.id_pedido);
+        localStorage.removeItem('pending_checkout');
+        await fetchOrders();
+      } else if (response.data.status === 'pending') {
+        console.log("[Pedidos] ⏳ Pago aún pendiente, se verificará de nuevo al recargar.");
+      }
+    } catch (error) {
+      console.error("[Pedidos] ❌ Error verificando checkout:", error?.response?.data || error.message);
+    } finally {
+      setConfirmingPayment(false);
+    }
+  };
 
   const fetchOrders = async () => {
     try {
@@ -161,6 +252,11 @@ const Pedidos = () => {
         <div className="container">
           <div className="pedidos-header">
             <h1>📦 Mis Pedidos</h1>
+            {confirmingPayment && (
+              <div className="bg-green-100 text-green-700 p-4 rounded-xl mb-4 font-bold animate-pulse">
+                🔄 Confirmando tu pago con Mercado Pago...
+              </div>
+            )}
             <p>Gestiona y revisa el estado de tus pedidos en tiempo real</p>
           </div>
         </div>

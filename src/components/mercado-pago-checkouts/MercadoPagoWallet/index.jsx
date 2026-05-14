@@ -3,7 +3,7 @@ import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
 import api from '../../../api';
 
 // RECUERDA: Cambiar por tu Public Key de Mercado Pago
-const MERCADOPAGO_PUBLIC_KEY = 'APP_USR-684b5c77-400d-4f11-9a91-4d10f823122c'; // REEMPLAZAR AQUÍ
+const MERCADOPAGO_PUBLIC_KEY = 'APP_USR-da1d9098-8dac-4cca-964b-c120d6e1d91d'; // REEMPLAZAR AQUÍ
 
 const MercadoPagoWallet = ({ pedidoId, onPaymentSuccess }) => {
   const [preferenceId, setPreferenceId] = useState(null);
