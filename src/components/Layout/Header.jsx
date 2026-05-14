@@ -4,32 +4,37 @@ import { useSucursal } from '../../contexts/SucursalContext';
 import { AuthContext } from '../../contexts/AuthContext';
 import StoreLocator from './StoreLocator';
 
+import {
+  ShoppingCart,
+  User,
+  Menu,
+  X,
+  MapPin,
+  LogOut,
+  Package,
+  Phone,
+  Home,
+  Pizza,
+} from 'lucide-react';
+
 const Header = () => {
   const { sucursalSeleccionada, setSucursalSeleccionada } = useSucursal();
   const { user, logout } = useContext(AuthContext);
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isStoreLocatorOpen, setIsStoreLocatorOpen] = useState(false);
+
   const [cartCount] = useState(3);
+
   const location = useLocation();
   const navigate = useNavigate();
+
   const [currentPath, setCurrentPath] = useState(location.pathname);
 
   useEffect(() => {
     setCurrentPath(location.pathname);
   }, [location]);
-
-  const handleOrderClick = () => {
-    handleNavigation('/menu');
-  };
-
-  const handleCartClick = () => {
-    handleNavigation('/carrito');
-  };
-
-  const handleProfileClick = () => {
-    setIsProfileMenuOpen(!isProfileMenuOpen);
-  };
 
   const handleNavigation = (path) => {
     navigate(path);
@@ -38,183 +43,191 @@ const Header = () => {
   };
 
   const handleLogout = () => {
-    console.log('Cerrando sesión...');
     logout();
-    setSucursalSeleccionada(null); // Limpiar la sucursal también
+    setSucursalSeleccionada(null);
     setIsProfileMenuOpen(false);
   };
 
   const isActive = (path) => currentPath === path;
 
+  const navItemClass = (path) =>
+    `flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+      isActive(path)
+        ? 'bg-red-600 text-white shadow-md'
+        : 'text-gray-700 hover:bg-gray-100'
+    }`;
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-lg border-b-4 border-red-600">
-      <nav className="relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            {/* Logo */}
-            <div className="flex items-center gap-3 cursor-pointer group" onClick={() => handleNavigation('/')}>
-              <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center shadow-lg border-4 border-yellow-400 transform group-hover:scale-110 transition-transform duration-300">
-                <span className="text-3xl">🍕</span>
+    <>
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 lg:px-8">
+          <div className="h-20 flex items-center justify-between">
+            {/* LOGO */}
+            <div
+              onClick={() => handleNavigation('/')}
+              className="flex items-center gap-3 cursor-pointer"
+            >
+              <div className="w-11 h-11 rounded-2xl bg-red-600 flex items-center justify-center shadow-sm">
+                <Pizza size={22} className="text-white" />
               </div>
-              <div className="hidden sm:block">
-                <h1 className="text-2xl font-black text-gray-900 tracking-tight leading-none">
+
+              <div>
+                <h1 className="text-xl font-black tracking-tight text-gray-900">
                   HAPPY PIZZA
                 </h1>
-                <p className="text-xs text-red-600 font-bold">Sabor que te hace feliz</p>
+
+                <p className="text-xs text-gray-500">
+                  Pizza artesanal premium
+                </p>
               </div>
-              {sucursalSeleccionada && (
-                <div className="bg-red-50 px-3 py-1.5 rounded-lg border border-red-200 flex items-center gap-2 animate-fade-in">
-                  <span className="text-red-500 animate-pulse">●</span>
-                  <span className="text-[10px] uppercase font-black text-red-700 tracking-wider">
-                    {sucursalSeleccionada.direccion}
-                  </span>
-                </div>
-              )}
             </div>
 
-            {/* Menú de Navegación - Desktop */}
-            <div className="hidden lg:flex items-center gap-2">
+            {/* DESKTOP NAV */}
+            <nav className="hidden lg:flex items-center gap-2">
               <button
                 onClick={() => handleNavigation('/')}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all duration-300 ${isActive('/')
-                  ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg scale-105'
-                  : 'text-gray-700 hover:bg-red-50 hover:text-red-600 hover:scale-105'
-                  }`}
+                className={navItemClass('/')}
               >
-                <span className="text-xl">🏠</span>
-                <span>Inicio</span>
+                <Home size={18} />
+                Inicio
               </button>
 
               <button
                 onClick={() => handleNavigation('/menu')}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all duration-300 ${isActive('/menu')
-                  ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg scale-105'
-                  : 'text-gray-700 hover:bg-red-50 hover:text-red-600 hover:scale-105'
-                  }`}
+                className={navItemClass('/menu')}
               >
-                <span className="text-xl">🍕</span>
-                <span>Menú</span>
+                <Pizza size={18} />
+                Menú
               </button>
 
               <button
                 onClick={() => setIsStoreLocatorOpen(true)}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all duration-300 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:scale-105`}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-100 transition-all"
               >
-                <span className="text-xl">📍</span>
-                <span>Tiendas</span>
+                <MapPin size={18} />
+                Tiendas
               </button>
 
               <button
                 onClick={() => handleNavigation('/pedidos')}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all duration-300 ${isActive('/pedidos')
-                  ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg scale-105'
-                  : 'text-gray-700 hover:bg-red-50 hover:text-red-600 hover:scale-105'
-                  }`}
+                className={navItemClass('/pedidos')}
               >
-                <span className="text-xl">📦</span>
-                <span>Mis Pedidos</span>
+                <Package size={18} />
+                Pedidos
               </button>
 
               <button
                 onClick={() => handleNavigation('/contacto')}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all duration-300 ${isActive('/contacto')
-                  ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg scale-105'
-                  : 'text-gray-700 hover:bg-red-50 hover:text-red-600 hover:scale-105'
-                  }`}
+                className={navItemClass('/contacto')}
               >
-                <span className="text-xl">📞</span>
-                <span>Contacto</span>
+                <Phone size={18} />
+                Contacto
               </button>
+            </nav>
 
-              <button
-                onClick={handleOrderClick}
-                className="ml-3 flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 font-black px-6 py-3 rounded-xl hover:from-yellow-500 hover:to-orange-500 transform hover:scale-110 transition-all duration-300 shadow-lg"
-              >
-                <span className="text-xl">🚀</span>
-                <span>Ordenar Ahora</span>
-              </button>
-            </div>
-
-            {/* Carrito y Usuario */}
+            {/* RIGHT */}
             <div className="flex items-center gap-3">
-              {/* Carrito */}
+              {/* Sucursal */}
+              {sucursalSeleccionada && (
+                <div className="hidden xl:flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-xl">
+                  <MapPin size={16} className="text-red-600" />
+
+                  <span className="text-sm text-gray-700 font-medium">
+                    {sucursalSeleccionada.direccion}
+                  </span>
+                </div>
+              )}
+
+              {/* CART */}
               <button
-                onClick={handleCartClick}
-                className="relative bg-red-50 hover:bg-red-100 p-3 rounded-xl transition-all duration-300 transform hover:scale-110 group"
+                onClick={() => handleNavigation('/carrito')}
+                className="relative w-11 h-11 rounded-xl bg-gray-100 hover:bg-gray-200 transition-all flex items-center justify-center"
               >
-                <span className="text-2xl">🛒</span>
+                <ShoppingCart size={20} className="text-gray-800" />
+
                 {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-gradient-to-r from-red-600 to-orange-500 text-white text-xs font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg animate-pulse">
+                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-600 text-white text-xs flex items-center justify-center font-bold">
                     {cartCount}
                   </span>
                 )}
               </button>
 
-              {/* Usuario con menú desplegable */}
+              {/* PROFILE */}
               <div className="relative">
                 <button
-                  onClick={handleProfileClick}
-                  className="hidden sm:flex items-center gap-2 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-bold px-4 py-2.5 rounded-xl transition-all duration-300 transform hover:scale-110 shadow-lg"
+                  onClick={() =>
+                    setIsProfileMenuOpen(!isProfileMenuOpen)
+                  }
+                  className="flex items-center gap-2 px-4 h-11 rounded-xl bg-red-600 hover:bg-red-700 transition-all text-white font-medium"
                 >
-                  <span className="text-xl">👤</span>
-                  <span className="hidden md:inline">
-                    {user ? (user.usuario || 'Mi Cuenta') : 'Mi Cuenta'}
+                  <User size={18} />
+
+                  <span className="hidden md:block">
+                    {user ? user.usuario : 'Mi cuenta'}
                   </span>
                 </button>
 
-                {/* Menú desplegable del perfil */}
                 {isProfileMenuOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-2xl border-2 border-red-100 overflow-hidden z-50">
+                  <div className="absolute right-0 top-14 w-64 bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-hidden">
                     <div className="p-2">
-                      {user && (
-                        <div className="px-3 py-2 mb-2 bg-red-50 rounded-lg">
-                          <p className="text-xs text-red-600 font-bold uppercase tracking-wider">Bienvenido</p>
-                          <p className="text-gray-900 font-black truncate">{user.usuario}</p>
-                        </div>
-                      )}
                       {user ? (
                         <>
+                          <div className="px-4 py-3 border-b border-gray-100">
+                            <p className="text-xs text-gray-500">
+                              Sesión iniciada
+                            </p>
+
+                            <p className="font-semibold text-gray-900 truncate">
+                              {user.usuario}
+                            </p>
+                          </div>
+
                           <button
-                            onClick={() => handleNavigation('/perfil')}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all duration-200 font-semibold"
+                            onClick={() =>
+                              handleNavigation('/perfil')
+                            }
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-100 transition-all text-left"
                           >
-                            <span className="text-xl">👤</span>
-                            <span>Mi Perfil</span>
+                            <User size={18} />
+                            Mi perfil
                           </button>
 
                           <button
-                            onClick={() => handleNavigation('/pedidos')}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all duration-200 font-semibold"
+                            onClick={() =>
+                              handleNavigation('/pedidos')
+                            }
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-100 transition-all text-left"
                           >
-                            <span className="text-xl">📦</span>
-                            <span>Mis Pedidos</span>
+                            <Package size={18} />
+                            Mis pedidos
                           </button>
-
-                          <div className="border-t border-gray-200 my-1"></div>
 
                           <button
                             onClick={handleLogout}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg transition-all duration-200 font-bold"
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-50 text-red-600 transition-all text-left"
                           >
-                            <span className="text-xl">🚪</span>
-                            <span>Cerrar Sesión</span>
+                            <LogOut size={18} />
+                            Cerrar sesión
                           </button>
                         </>
                       ) : (
                         <>
                           <button
-                            onClick={() => handleNavigation('/login')}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all duration-200 font-semibold"
+                            onClick={() =>
+                              handleNavigation('/login')
+                            }
+                            className="w-full px-4 py-3 rounded-xl hover:bg-gray-100 transition-all text-left"
                           >
-                            <span className="text-xl">🔑</span>
-                            <span>Iniciar Sesión</span>
+                            Iniciar sesión
                           </button>
+
                           <button
-                            onClick={() => handleNavigation('/register')}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg transition-all duration-200 font-bold"
+                            onClick={() =>
+                              handleNavigation('/register')
+                            }
+                            className="w-full px-4 py-3 rounded-xl hover:bg-red-50 text-red-600 transition-all text-left"
                           >
-                            <span className="text-xl">✍️</span>
-                            <span>Registrarse</span>
+                            Crear cuenta
                           </button>
                         </>
                       )}
@@ -223,148 +236,62 @@ const Header = () => {
                 )}
               </div>
 
-              {/* Botón de menú móvil */}
+              {/* MOBILE BTN */}
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="lg:hidden flex flex-col gap-1.5 p-2 rounded-lg hover:bg-red-50 transition-all"
+                className="lg:hidden w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center"
               >
-                <span className={`w-6 h-0.5 bg-red-600 rounded-full transition-all duration-300 ${isMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
-                <span className={`w-6 h-0.5 bg-red-600 rounded-full transition-all duration-300 ${isMenuOpen ? 'opacity-0' : ''}`}></span>
-                <span className={`w-6 h-0.5 bg-red-600 rounded-full transition-all duration-300 ${isMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
+                {isMenuOpen ? (
+                  <X size={22} />
+                ) : (
+                  <Menu size={22} />
+                )}
               </button>
             </div>
           </div>
         </div>
 
-        {/* Menú Móvil */}
-        <div
-          className={`lg:hidden absolute top-full left-0 right-0 bg-white shadow-2xl border-t-2 border-red-200 transition-all duration-300 overflow-hidden ${isMenuOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
-            }`}
-        >
-          <div className="p-4 space-y-2">
-            <button
-              onClick={() => handleNavigation('/')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all duration-300 ${isActive('/')
-                ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg'
-                : 'bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-600'
-                }`}
-            >
-              <span className="text-2xl">🏠</span>
-              <span>Inicio</span>
-            </button>
+        {/* MOBILE MENU */}
+        {isMenuOpen && (
+          <div className="lg:hidden border-t border-gray-200 bg-white">
+            <div className="p-4 space-y-2">
+              <button
+                onClick={() => handleNavigation('/')}
+                className="w-full text-left px-4 py-3 rounded-xl hover:bg-gray-100"
+              >
+                Inicio
+              </button>
 
-            <button
-              onClick={() => handleNavigation('/menu')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all duration-300 ${isActive('/menu')
-                ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg'
-                : 'bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-600'
-                }`}
-            >
-              <span className="text-2xl">🍕</span>
-              <span>Menú</span>
-            </button>
+              <button
+                onClick={() => handleNavigation('/menu')}
+                className="w-full text-left px-4 py-3 rounded-xl hover:bg-gray-100"
+              >
+                Menú
+              </button>
 
-            <button
-              onClick={() => {
-                setIsStoreLocatorOpen(true);
-                setIsMenuOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-300`}
-            >
-              <span className="text-2xl">📍</span>
-              <span>Tiendas</span>
-            </button>
+              <button
+                onClick={() => handleNavigation('/pedidos')}
+                className="w-full text-left px-4 py-3 rounded-xl hover:bg-gray-100"
+              >
+                Pedidos
+              </button>
 
-            <button
-              onClick={() => handleNavigation('/pedidos')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all duration-300 ${isActive('/pedidos')
-                ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg'
-                : 'bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-600'
-                }`}
-            >
-              <span className="text-2xl">📦</span>
-              <span>Mis Pedidos</span>
-            </button>
-
-            <button
-              onClick={() => handleNavigation('/contacto')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all duration-300 ${isActive('/contacto')
-                ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg'
-                : 'bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-600'
-                }`}
-            >
-              <span className="text-2xl">📞</span>
-              <span>Contacto</span>
-            </button>
-
-            {user ? (
-              <>
-                <button
-                  onClick={() => handleNavigation('/perfil')}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-300 sm:hidden"
-                >
-                  <span className="text-2xl">👤</span>
-                  <span>Mi Perfil: {user.usuario}</span>
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all duration-300 sm:hidden"
-                >
-                  <span className="text-2xl">🚪</span>
-                  <span>Cerrar Sesión</span>
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={() => handleNavigation('/login')}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-300 sm:hidden"
-                >
-                  <span className="text-2xl">🔑</span>
-                  <span>Iniciar Sesión</span>
-                </button>
-                <button
-                  onClick={() => handleNavigation('/register')}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all duration-300 sm:hidden"
-                >
-                  <span className="text-2xl">✍️</span>
-                  <span>Registrarse</span>
-                </button>
-              </>
-            )}
-
-            <button
-              onClick={handleOrderClick}
-              className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 font-black px-6 py-4 rounded-xl hover:from-yellow-500 hover:to-orange-500 transition-all duration-300 shadow-lg mt-4"
-            >
-              <span className="text-2xl">🚀</span>
-              <span>Ordenar Ahora</span>
-            </button>
+              <button
+                onClick={() => handleNavigation('/contacto')}
+                className="w-full text-left px-4 py-3 rounded-xl hover:bg-gray-100"
+              >
+                Contacto
+              </button>
+            </div>
           </div>
-        </div>
-      </nav>
-
-      {/* Overlay para cerrar menú móvil */}
-      {isMenuOpen && (
-        <div
-          className="lg:hidden fixed inset-0 bg-black/30 backdrop-blur-sm -z-10"
-          onClick={() => setIsMenuOpen(false)}
-        ></div>
-      )}
-
-      {/* Overlay para cerrar menú de perfil */}
-      {isProfileMenuOpen && (
-        <div
-          className="fixed inset-0 -z-10"
-          onClick={() => setIsProfileMenuOpen(false)}
-        ></div>
-      )}
+        )}
+      </header>
 
       <StoreLocator
         isOpen={isStoreLocatorOpen}
         onClose={() => setIsStoreLocatorOpen(false)}
       />
-    </header>
+    </>
   );
 };
 
