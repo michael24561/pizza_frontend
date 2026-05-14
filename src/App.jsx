@@ -1,6 +1,7 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
 
 import Layout from './components/Layout/Layout';
+import useCheckoutVerifier from './hooks/useCheckoutVerifier';
 
 import Home from './pages/Home';
 import Menu from './pages/Menu';
@@ -11,11 +12,15 @@ import Perfil from './pages/Perfil';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import ProductDetail from './pages/ProductDetail';
+import PagoExitoso from './pages/PagoExitoso';
 
 import './App.css';
 
 function AppContent() {
   const location = useLocation();
+
+  // Verificar checkouts pendientes de Mercado Pago en CUALQUIER página
+  useCheckoutVerifier();
 
   const isAuthPage =
     location.pathname === '/login' ||
@@ -36,6 +41,7 @@ function AppContent() {
         <Route path="/" element={<Home />} />
         <Route path="/menu" element={<Menu />} />
         <Route path="/pedidos" element={<Pedidos />} />
+        <Route path="/pago-exitoso" element={<PagoExitoso />} />
         <Route path="/contacto" element={<Contacto />} />
         <Route path="/carrito" element={<Carrito />} />
         <Route path="/perfil" element={<Perfil />} />
